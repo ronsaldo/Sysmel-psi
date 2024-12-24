@@ -182,12 +182,89 @@ ValuePtr parseLiteralFloat(ParserState &state)
     return literal;
 }
 
+std::string parseCEscapedString(const std::string &str)
+{
+    std::string unescaped;
+    unescaped.reserve(str.size());
+
+    for(size_t i = 0; i < str.size(); ++i)
+    {
+        auto c = str[i];
+        if (c == '\\')
+        {
+            auto c1 = str[++i];
+            switch(c1)
+            {
+            case 'n':
+                unescaped.push_back('\n');
+                break;
+            case 'r':
+                unescaped.push_back('\r');
+                break;
+            case 't':
+                unescaped.push_back('\t');
+                break;
+            default:
+                unescaped.push_back(c1);
+                break;
+            }
+        }
+        else
+        {
+            unescaped.push_back(c);
+        }
+    }
+
+    return unescaped;
+}
+
+ValuePtr parseLiteralCharacter(ParserState &state)
+{
+    auto token = state.next();
+    assert(token->kind == TokenKind::Character);
+    auto literal = std::make_shared<SyntaxLiteralCharacter> ();
+    literal->sourcePosition = token->position;
+    auto tokenValue = token->getValue();
+    literal->value = parseCEscapedString(tokenValue.substr(1, tokenValue.size()-2))[0];
+    return literal;
+}
+
+ValuePtr parseLiteralString(ParserState &state)
+{
+    auto token = state.next();
+    assert(token->kind == TokenKind::String);
+    auto literal = std::make_shared<SyntaxLiteralString> ();
+    literal->sourcePosition = token->position;
+    auto tokenValue = token->getValue();
+    literal->value = parseCEscapedString(tokenValue.substr(1, tokenValue.size()-2));
+    return literal;
+}
+
+ValuePtr parseLiteralSymbol(ParserState &state)
+{
+    auto token = state.next();
+    assert(token->kind == TokenKind::Symbol);
+    auto literal = std::make_shared<SyntaxLiteralSymbol> ();
+    literal->sourcePosition = token->position;
+    auto tokenValue = token->getValue().substr(1);
+    if (tokenValue[0] == '\"')
+        literal->value = parseCEscapedString(tokenValue.substr(1, tokenValue.size()-2));
+    else
+        literal->value = tokenValue;
+    
+    return literal;
+}
+
+
 ValuePtr parseLiteral(ParserState &state)
 {
     switch(state.peekKind())
     {
     case TokenKind::Nat: return parseLiteralInteger(state);
     case TokenKind::Float: return parseLiteralFloat(state);
+    case TokenKind::Character: return parseLiteralCharacter(state);
+    case TokenKind::String: return parseLiteralString(state);
+    case TokenKind::Symbol: return parseLiteralSymbol(state);
     default:
         return state.advanceWithExpectedError("Expected a literal");
     }

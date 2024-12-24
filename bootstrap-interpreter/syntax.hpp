@@ -86,6 +86,45 @@ public:
     int64_t value;    
 };
 
+class SyntaxLiteralCharacter : public SyntaxLiteral
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxLiteralCharacter(" << value << ")";
+        return out.str();
+    }
+
+    char32_t value;
+};
+
+class SyntaxLiteralString : public SyntaxLiteral
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxLiteralString(" << value << ")";
+        return out.str();
+    }
+
+    std::string value;    
+};
+
+class SyntaxLiteralSymbol : public SyntaxLiteral
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxLiteralSymbol(" << value << ")";
+        return out.str();
+    }
+
+    std::string value;    
+};
+
 } // end of namespace Sysmel
 
 #endif //SYSMEL_SYNTAX_HPP
