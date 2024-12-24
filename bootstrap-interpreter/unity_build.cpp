@@ -1,2 +1,5 @@
 #include "scanner.cpp"
+#include "value.cpp"
+#include "syntax.cpp"
+#include "parser.cpp"
 #include "main.cpp"

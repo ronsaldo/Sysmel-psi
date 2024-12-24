@@ -2,6 +2,7 @@
 #define SYSMEL_BOOTSTRAP_SCANNER
 
 #include "source.hpp"
+#include "value.hpp"
 #include <vector>
 #include <string>
 
@@ -21,7 +22,7 @@ enum class TokenKind
 
 const char *getTokenKindName(TokenKind kind);
 
-struct Token
+struct Token : public Object
 {
     SourcePositionPtr position;
     TokenKind kind;

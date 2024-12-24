@@ -1,4 +1,5 @@
 #include "scanner.hpp"
+#include "parser.hpp"
 #include <stdio.h>
 #include <string.h>
 #include <vector>
@@ -27,13 +28,16 @@ void evaluateAndPrintString(const std::string &sourceText)
     sourceCode->text = sourceText;
 
     auto tokens = scanSourceCode(sourceCode);
-    for(auto token : tokens)
+    /*for(auto token : tokens)
     {
         if(token->errorMessage.empty())
             printf("%s\n", getTokenKindName(token->kind));
         else
             printf("%s: %s\n", getTokenKindName(token->kind), token->errorMessage.c_str());
-    }
+    }*/
+    auto parseTree = parseTokens(sourceCode, tokens);
+    auto parseTreeString = parseTree->printString();
+    printf("%s\n", parseTreeString.c_str());
 }
 
 int main(int argc, const char **argv)

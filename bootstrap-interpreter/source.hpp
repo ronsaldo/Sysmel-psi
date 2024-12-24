@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "value.hpp"
+
 #include <stdint.h>
 #include <string>
 #include <memory>
@@ -12,7 +14,7 @@ namespace Sysmel
 /**
  * Source code. Text plus additional metadata.
  */
-struct SourceCode
+struct SourceCode : public Object
 {
     std::string directory;
     std::string name;
@@ -22,7 +24,7 @@ struct SourceCode
 
 typedef std::shared_ptr<SourceCode> SourceCodePtr;
 
-struct SourcePosition
+struct SourcePosition : public Object
 {
     SourceCodePtr sourceCode;
     size_t startIndex;
@@ -35,6 +37,36 @@ struct SourcePosition
     std::string getValue() const
     {
         return sourceCode->text.substr(startIndex, endIndex - startIndex);
+    }
+
+    SourcePositionPtr until(const SourcePositionPtr &endSourcePosition) const
+    {
+        auto merged = std::make_shared<SourcePosition> ();
+        merged->sourceCode = sourceCode;
+        
+        merged->startIndex  = startIndex;
+        merged->startLine   = startLine;
+        merged->startColumn = startColumn;
+
+        merged->endIndex  = endSourcePosition->startIndex;
+        merged->endLine   = endSourcePosition->startLine;
+        merged->endColumn = endSourcePosition->startColumn;
+        return merged;
+    }
+
+    SourcePositionPtr to(const SourcePositionPtr &endSourcePosition) const
+    {
+        auto merged = std::make_shared<SourcePosition> ();
+        merged->sourceCode = sourceCode;
+        
+        merged->startIndex  = startIndex;
+        merged->startLine   = startLine;
+        merged->startColumn = startColumn;
+
+        merged->endIndex  = endSourcePosition->endIndex;
+        merged->endLine   = endSourcePosition->endLine;
+        merged->endColumn = endSourcePosition->endColumn;
+        return merged;
     }
 };
 
