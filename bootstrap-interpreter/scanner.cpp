@@ -335,6 +335,76 @@ TokenPtr scanSingleToken(ScannerState &state)
                 state.advance();
             return state.makeTokenStartingFrom(TokenKind::Symbol, initialState); 
         }
+        else if(c1 == '"')
+        {
+            state.advance(2);
+            while (!state.atEnd() && state.peek() != '"')
+            {
+                if(state.peek() == '\\' && state.peek(1) > 0)
+                    state.advance(2);
+                else
+                    state.advance();
+            }
+
+            if (state.peek() != '"')
+                return state.makeErrorTokenStartingFrom("Incomplete symbol string literal.", initialState);
+            
+            state.advance();
+            return state.makeTokenStartingFrom(TokenKind::Symbol, initialState); 
+        }
+        else if (c1 == '[')
+        {
+            state.advance(2);
+            return state.makeTokenStartingFrom(TokenKind::ByteArrayStart, initialState); 
+        }
+        else if (c1 == '{')
+        {
+            state.advance(2);
+            return state.makeTokenStartingFrom(TokenKind::DictionaryStart, initialState); 
+        }
+        else if (c1 == '(')
+        {
+            state.advance(2);
+            return state.makeTokenStartingFrom(TokenKind::LiteralArrayStart, initialState); 
+        }
+    }
+
+    // Strings
+    if(c == '"')
+    {
+        state.advance();
+        while (!state.atEnd() && state.peek() != '"')
+        {
+            if(state.peek() == '\\' && state.peek(1) > 0)
+                state.advance(2);
+            else
+                state.advance();
+        }
+
+        if (state.peek() != '"')
+            return state.makeErrorTokenStartingFrom("Incomplete string literal.", initialState);
+        
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::String, initialState); 
+    }
+
+    // Character
+    if(c == '\'')
+    {
+        state.advance();
+        while (!state.atEnd() && state.peek() != '\'')
+        {
+            if(state.peek() == '\\' && state.peek(1) > 0)
+                state.advance(2);
+            else
+                state.advance();
+        }
+
+        if (state.peek() != '\'')
+            return state.makeErrorTokenStartingFrom("Incomplete character literal.", initialState);
+        
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::Character, initialState); 
     }
 
     switch(c)
