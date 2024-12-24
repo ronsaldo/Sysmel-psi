@@ -31,6 +31,11 @@ struct SourcePosition
     size_t startColumn;
     size_t endLine;
     size_t endColumn;
+
+    std::string getValue() const
+    {
+        return sourceCode->text.substr(startIndex, endIndex - startIndex);
+    }
 };
 
 typedef std::shared_ptr<SourcePosition> SourcePositionPtr;

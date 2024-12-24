@@ -26,6 +26,11 @@ struct Token
     SourcePositionPtr position;
     TokenKind kind;
     std::string errorMessage;
+
+    std::string getValue() const
+    {
+        return position->getValue();
+    }
 };
 typedef std::shared_ptr<Token> TokenPtr;
 

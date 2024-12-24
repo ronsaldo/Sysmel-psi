@@ -34,6 +34,14 @@ inline bool isIdentifierMiddle(int character)
     return isIdentifierStart(character) || isDigit(character);
 }
 
+bool isOperatorCharacter(int character)
+{
+    for (auto c : "+-/\\*~<>=@%|&?!^")
+        if(c == character)
+            return true;
+    return false;
+}
+
 struct ScannerState
 {
     SourceCodePtr sourceCode;
@@ -44,12 +52,12 @@ struct ScannerState
 
     bool atEnd() const
     {
-        return position >= sourceCode->text.size();
+        return size_t(position) >= sourceCode->text.size();
     }
 
     int peek(int peekOffset = 0)
     {
-        auto peekPosition = position + peekOffset;
+        size_t peekPosition = position + peekOffset;
         if(peekPosition < sourceCode->text.size())
             return sourceCode->text[peekPosition];
         else
@@ -294,6 +302,145 @@ TokenPtr scanSingleToken(ScannerState &state)
         }
 
         return state.makeTokenStartingFrom(TokenKind::Nat, initialState);
+    }
+
+    // Symbols
+    if(c == '#')
+    {
+        auto c1 = state.peek(1);
+        if(isIdentifierStart(c1))
+        {
+            state.advance(2);
+            while (isIdentifierMiddle(state.peek()))
+                state.advance();
+
+
+            if (state.peek() == ':')
+            {
+                state.advance();
+                bool hasAdvanced = true;
+                while(hasAdvanced)
+                {
+                    hasAdvanced = scanAdvanceKeyword(state);
+                }
+
+                return state.makeTokenStartingFrom(TokenKind::Symbol, initialState);                
+            }
+            return state.makeTokenStartingFrom(TokenKind::Symbol, initialState);                
+        }
+        else if(isOperatorCharacter(c1))
+        {
+            state.advance(2);
+            while(isOperatorCharacter(state.peek()))
+                state.advance();
+            return state.makeTokenStartingFrom(TokenKind::Symbol, initialState); 
+        }
+    }
+
+    switch(c)
+    {
+    case '(':
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::LeftParent, initialState); 
+    case ')':
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::RightParent, initialState); 
+    case '[':
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::LeftBracket, initialState); 
+    case ']':
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::RightBracket, initialState); 
+    case '{':
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::LeftCurlyBracket, initialState); 
+    case '}':
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::RightCurlyBracket, initialState); 
+    case ';':
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::Semicolon, initialState);
+    case ',':
+        state.advance();
+        return state.makeTokenStartingFrom(TokenKind::Comma, initialState); 
+    case '.':
+        state.advance();
+        if(state.peek() == '.' && state.peek(1) == '.')
+        {
+            state.advance(2);
+            return state.makeTokenStartingFrom(TokenKind::Ellipsis, initialState);
+        }
+        return state.makeTokenStartingFrom(TokenKind::Dot, initialState);
+    case ':':
+        state.advance();
+        if(state.peek() == ':')
+        {
+            state.advance();
+            return state.makeTokenStartingFrom(TokenKind::ColonColon, initialState);
+        }
+        else if(state.peek() == '=')
+        {
+            state.advance();
+            return state.makeTokenStartingFrom(TokenKind::Assignment, initialState);
+        }
+        return state.makeTokenStartingFrom(TokenKind::Colon, initialState);
+    case '`':
+        if (state.peek() == '\'')
+        {
+            state.advance(2);
+            return state.makeTokenStartingFrom(TokenKind::Quote, initialState);
+        }
+        else if (state.peek() == '`')
+        {
+            state.advance(2);
+            return state.makeTokenStartingFrom(TokenKind::QuasiQuote, initialState);
+        }
+        else if (state.peek() == ',')
+        {
+            state.advance(2);
+            return state.makeTokenStartingFrom(TokenKind::QuasiUnquote, initialState);
+        }
+        else if (state.peek() == '@')
+        {
+            state.advance(2);
+            return state.makeTokenStartingFrom(TokenKind::Splice, initialState);
+        }
+        break;
+    case '|':
+        state.advance();
+        if (isOperatorCharacter(state.peek()))
+        {
+            while(isOperatorCharacter(state.peek()))
+                state.advance();
+            return state.makeTokenStartingFrom(TokenKind::Operator, initialState);
+        }
+
+        return state.makeTokenStartingFrom(TokenKind::Bar, initialState);
+    default:
+        break;
+    }
+
+    if(isOperatorCharacter(c))
+    {
+        state.advance();
+        while(isOperatorCharacter(state.peek()))
+            state.advance();
+
+        auto token = state.makeTokenStartingFrom(TokenKind::Operator, initialState);
+        auto tokenValue = token->getValue();
+        if (tokenValue == "<")
+            token->kind = TokenKind::LessThan;
+        else if (tokenValue == ">")
+            token->kind = TokenKind::GreaterThan;
+        else if (tokenValue == "*")
+            token->kind = TokenKind::Star;
+        else if (tokenValue == "?")
+            token->kind = TokenKind::Question;
+        else if (tokenValue == "!")
+            token->kind = TokenKind::Bang;
+        else if (tokenValue == "<-")
+            token->kind = TokenKind::BindOperator;
+        return token;
     }
 
     std::string unknownCharacter;
