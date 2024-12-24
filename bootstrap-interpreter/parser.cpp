@@ -4,6 +4,7 @@
 
 namespace Sysmel
 {
+
 struct ParserState
 {
     SourceCodePtr sourceCode;
@@ -47,16 +48,6 @@ struct ParserState
         return token;
     }
 
-    /*def advanceWithExpectedError(self, message: str):
-        if self.peekKind() == TokenKind.ERROR:
-            errorToken = self.next()
-            return self, ParseTreeErrorNode(errorToken.sourcePosition, errorToken.errorMessage)
-        elif self.atEnd():
-            return self, ParseTreeErrorNode(self.currentSourcePosition(), message)
-        else:
-            errorPosition = self.currentSourcePosition()
-            self.advance()
-            return self, ParseTreeErrorNode(errorPosition, message)*/
     ValuePtr advanceWithExpectedError(const char *message)
     {
         if (peekKind() == TokenKind::Error)
@@ -133,7 +124,28 @@ struct ParserState
         node->errorMessage = errorMessage;
         return node;
     }
+
+    ValuePtr expectAddingErrorToNode(TokenKind expectedKind, ValuePtr node)
+    {
+        if (peekKind() == expectedKind)
+        {
+            advance();
+            return node;
+        }
+
+        auto errorPosition = currentSourcePosition();
+        auto syntaxErrorNode = std::make_shared<SyntaxError> ();
+        syntaxErrorNode->sourcePosition = errorPosition;
+        syntaxErrorNode->innerNode = node;
+
+        std::ostringstream out;
+        out << "Expected token of kind " << getTokenKindName(expectedKind) << ".";
+        syntaxErrorNode->errorMessage = out.str();
+        return syntaxErrorNode;
+    }
 };
+
+ValuePtr parseSequenceUntilEndOrDelimiter(ParserState &state, TokenKind delimiter);
 
 int64_t parseIntegerConstant(const std::string &constant)
 {
@@ -270,18 +282,78 @@ ValuePtr parseLiteral(ParserState &state)
     }
 }
 
-/*
-def parseLiteral(state: ParserState) -> tuple[ParserState, ParseTreeNode]:
-    if state.peekKind() == TokenKind.NAT: return parseLiteralInteger(state)
-    elif state.peekKind() == TokenKind.FLOAT: return parseLiteralFloat(state)
-    elif state.peekKind() == TokenKind.STRING: return parseLiteralString(state)
-    elif state.peekKind() == TokenKind.CHARACTER: return parseLiteralCharacter(state)
-    elif state.peekKind() == TokenKind.SYMBOL: return parseLiteralSymbol(state)
-    else: return state.advanceWithExpectedError('Expected a literal.')
+ValuePtr parseIdentifier(ParserState &state)
+{
+    auto token = state.next();
+    assert(token->kind == TokenKind::Identifier);
+
+    auto node = std::make_shared<SyntaxIdentifierReference> ();
+    node->sourcePosition = token->position;
+    node->value = token->getValue();
+    return node;
+}
+
+bool isBinaryExpressionOperator(TokenKind kind)
+{
+    switch(kind)
+    {
+    case TokenKind::Operator:
+    case TokenKind::Star:
+    case TokenKind::LessThan:
+    case TokenKind::GreaterThan:
+    case TokenKind::Bar:
+        return true;
+    default:
+        return false;
+    }
+}
+
+ValuePtr parseParenthesis(ParserState &state)
+{
+    auto startPosition = state.position;
+    assert(state.peekKind() == TokenKind::LeftParent);
+    state.advance();
+
+    if (isBinaryExpressionOperator(state.peekKind()) && state.peekKind(1) == TokenKind::RightParent)
+    {
+        auto token = state.next();
+        state.advance();
+    }
+
+    if (state.peekKind() == TokenKind::RightParent)
+    {
+        state.advance();
+        auto tuple = std::make_shared<SyntaxTuple> ();
+        tuple->sourcePosition = state.sourcePositionFrom(startPosition);
+        return tuple;
+    }
+
+    auto expression = parseSequenceUntilEndOrDelimiter(state, TokenKind::RightParent);
+    expression = state.expectAddingErrorToNode(TokenKind::RightParent, expression);
+    return expression;
+}
+ValuePtr parseTerm(ParserState &state)
+{
+    switch(state.peekKind())
+    {
+    case TokenKind::Identifier: return parseIdentifier(state);
+    case TokenKind::LeftParent: return parseParenthesis(state);
+    default:
+        return parseLiteral(state);
+    }
+}   
+
+/*def parseTerm(state: ParserState) -> tuple[ParserState, ParseTreeNode]:
+    if state.peekKind() == TokenKind.IDENTIFIER: return parseIdentifier(state)
+    elif state.peekKind() == TokenKind.LEFT_PARENT: return parseParenthesis(state)
+    elif state.peekKind() == TokenKind.LEFT_CURLY_BRACKET: return parseBlock(state)
+    elif state.peekKind() == TokenKind.DICTIONARY_START: return parseDictionary(state)
+    elif state.peekKind() == TokenKind.COLON: return parseBindableName(state)
+    else: return parseLiteral(state)
 */
 ValuePtr parseExpression(ParserState &state)
 {
-    return parseLiteral(state);
+    return parseTerm(state);
 }
 
 std::vector<ValuePtr> parseExpressionListUntilEndOrDelimiter(ParserState &state, TokenKind delimiter)

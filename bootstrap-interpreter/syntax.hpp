@@ -41,6 +41,26 @@ public:
     std::vector<ValuePtr> elements;
 };
 
+class SyntaxTuple : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxTuple(";
+        for(size_t i = 0; i < elements.size(); ++i)
+        {
+            if(i > 0)
+                out << ". ";
+            out << elements[i]->printString();
+        }
+        out << ")";
+        return out.str();
+    }
+
+    std::vector<ValuePtr> elements;
+};
+
 
 class SyntaxError : public SyntacticValue
 {
@@ -48,11 +68,28 @@ public:
     virtual std::string printString() const override
     {
         std::ostringstream out;
-        out << "SyntaxError(" << errorMessage << ")";
+        out << "SyntaxError(" << errorMessage;
+        if (innerNode)
+            out << ": " << innerNode->printString();
+        out << ")";
         return out.str();
     }
 
     std::string errorMessage;
+    ValuePtr innerNode;
+};
+
+class SyntaxIdentifierReference : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxIdentifierReference(" << value << ")";
+        return out.str();
+    }
+
+    std::string value;    
 };
 
 class SyntaxLiteral : public SyntacticValue
