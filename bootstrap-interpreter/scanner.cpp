@@ -15,6 +15,25 @@ const char *getTokenKindName(TokenKind kind)
     return TokenKindNames[int(kind)];
 }
 
+inline bool isDigit(int character)
+{
+    return '0' <= character && character <= '9';
+}
+
+inline bool isIdentifierStart(int character)
+{
+    return
+        ('A' <= character && character <= 'Z') ||
+        ('a' <= character && character <= 'z') ||
+        (character == '_')
+        ;
+}
+
+inline bool isIdentifierMiddle(int character)
+{
+    return isIdentifierStart(character) || isDigit(character);
+}
+
 struct ScannerState
 {
     SourceCodePtr sourceCode;
@@ -180,6 +199,23 @@ TokenPtr skipWhite(ScannerState &state)
     return nullptr;
 }
 
+bool scanAdvanceKeyword(ScannerState &state)
+{
+    if(!isIdentifierStart(state.peek()))
+        return false;
+
+    auto initialState = state;
+    while (isIdentifierMiddle(state.peek()))
+        state.advance();
+
+    if(state.peek() != ':')
+    {
+        state = initialState;
+        return false;
+    }
+
+    return true;
+}
 TokenPtr scanSingleToken(ScannerState &state)
 {
     auto whiteToken = skipWhite(state);
@@ -189,9 +225,79 @@ TokenPtr scanSingleToken(ScannerState &state)
     if(state.atEnd())
         return state.makeToken(TokenKind::EndOfSource);
 
+    auto initialState = state;
+    auto c = state.peek();
+
+    // Identifiers, keywords and multi-keywords
+    if(isIdentifierStart(c))
+    {
+        state.advance();
+        while (isIdentifierMiddle(state.peek()))
+            state.advance();
+
+        if(state.peek() == ':')
+        {
+            state.advance();
+            bool isMultiKeyword = false;
+            bool hasAdvanced = true;
+            while(hasAdvanced)
+            {
+                hasAdvanced = scanAdvanceKeyword(state);
+                isMultiKeyword = isMultiKeyword || hasAdvanced;
+            }
+
+            if(isMultiKeyword)
+                return state.makeTokenStartingFrom(TokenKind::MultiKeyword, initialState);
+            else
+                return state.makeTokenStartingFrom(TokenKind::Keyword, initialState);
+        }
+
+        return state.makeTokenStartingFrom(TokenKind::Identifier, initialState);
+    }
+
+    // Numbers
+    if(isDigit(c))
+    {
+        state.advance();
+        while(isDigit(state.peek()))
+            state.advance();
+
+        // Parse the radix
+        if(state.peek() == 'r')
+        {
+            state.advance();
+            while(isIdentifierMiddle(state.peek()))
+                state.advance();
+            return state.makeTokenStartingFrom(TokenKind::Nat, initialState);
+        }
+
+        // Parse the decimal point
+        if(state.peek() == '.' && isDigit(state.peek(1)))
+        {
+            state.advance(2);
+            while(isDigit(state.peek()))
+                state.advance();
+
+            // Parse the exponent
+            if(state.peek() == 'e' || state.peek() == 'E')
+            {
+                if(isDigit(state.peek(1)) ||
+                ((state.peek(1) == '+' || state.peek(1) == '-') && isDigit(state.peek(2))))
+                {
+                    state.advance(2);
+                    while(isDigit(state.peek()))
+                        state.advance();
+                }
+            }
+
+            return state.makeTokenStartingFrom(TokenKind::Float, initialState);
+        }
+
+        return state.makeTokenStartingFrom(TokenKind::Nat, initialState);
+    }
+
     std::string unknownCharacter;
     unknownCharacter.push_back(state.peek());
-    auto initialState = state;
     state.advance();
     return state.makeErrorTokenStartingFrom("Unknown character: " + unknownCharacter, initialState);
 }
