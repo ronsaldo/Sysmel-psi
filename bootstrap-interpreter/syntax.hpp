@@ -253,6 +253,49 @@ public:
     std::vector<ValuePtr> elements;
 };
 
+class SyntaxMessageCascade : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxMessageCascade(";
+        if(receiver)
+            out << receiver->printString() << ",";
+        for(auto &message : messages)
+        {
+            out << ", " << message->printString();
+        }
+        out << ")";
+        return out.str();
+    }
+
+    ValuePtr receiver;
+    std::vector<ValuePtr> messages;
+};
+
+class SyntaxMessageCascadeMessage : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxMessageCascadeMessage(";
+        out << selector->printString();
+        for(auto &argument : arguments)
+        {
+            out << ", " << argument->printString();
+        }
+        out << ")";
+        return out.str();
+    }
+
+    ValuePtr selector;
+    std::vector<ValuePtr> arguments;
+};
+
+typedef std::shared_ptr<SyntaxMessageCascade> SyntaxMessageCascadePtr;
+
 class SyntaxMessageSend : public SyntacticValue
 {
 public:
@@ -271,9 +314,76 @@ public:
         return out.str();
     }
 
+    virtual SyntaxMessageCascadePtr asMessageCascade() const override
+    {
+        auto firstMessage = std::make_shared<SyntaxMessageCascadeMessage> ();
+        firstMessage->sourcePosition = sourcePosition;
+        firstMessage->selector = selector;
+        firstMessage->arguments = arguments;
+
+        auto messageCascade = std::make_shared<SyntaxMessageCascade> ();
+        messageCascade->sourcePosition = sourcePosition;
+        messageCascade->receiver = receiver;
+        messageCascade->messages.push_back(firstMessage);
+    }
+
     ValuePtr receiver;
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
+};
+
+
+
+class SyntaxQuote : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxQuote(" << value->printString() << ")";
+        return out.str();
+    }
+
+    ValuePtr value;
+};
+
+class SyntaxQuasiQuote : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxQuasiQuote(" << value->printString() << ")";
+        return out.str();
+    }
+
+    ValuePtr value;
+};
+
+class SyntaxQuasiUnquote : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxQuasiUnquote(" << value->printString() << ")";
+        return out.str();
+    }
+
+    ValuePtr value;
+};
+
+class SyntaxSplice : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxSplice(" << value->printString() << ")";
+        return out.str();
+    }
+
+    ValuePtr value;
 };
 
 } // end of namespace Sysmel

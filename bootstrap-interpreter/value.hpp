@@ -15,7 +15,7 @@ typedef std::shared_ptr<class Type> TypePtr;
 typedef std::shared_ptr<class Object> ObjectPtr;
 typedef std::shared_ptr<class SyntacticValue> SyntacticValuePtr;
 typedef std::shared_ptr<class SourcePosition> SourcePositionPtr; 
-
+typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
 class Value
 {
 public:
@@ -25,6 +25,8 @@ public:
 
     virtual std::string printString() const {return "SomeValue";}
     virtual SourcePositionPtr getSourcePosition() const {return nullptr;}
+    
+    virtual SyntaxMessageCascadePtr asMessageCascade() const { return nullptr; }
 };
 
 class Type : public Value

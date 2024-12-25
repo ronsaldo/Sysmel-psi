@@ -147,6 +147,7 @@ namespace Sysmel
 
     ValuePtr parseSequenceUntilEndOrDelimiter(ParserState &state, TokenKind delimiter);
     ValuePtr parseTerm(ParserState &state);
+    ValuePtr parseUnaryPrefixExpression(ParserState &state);
 
     int64_t parseIntegerConstant(const std::string &constant)
     {
@@ -338,24 +339,89 @@ namespace Sysmel
         return expression;
     }
 
-    ValuePtr parseUnaryPrefixExpression(ParserState &state)
+    ValuePtr parseUnaryPostfixExpression(ParserState &state)
     {
         return parseTerm(state);
+    }
+
+    ValuePtr parseQuote(ParserState &state)
+    {
+        auto startPosition = state.position;
+        assert(state.peekKind() == TokenKind::Quote);
+        state.advance();
+        auto term = parseUnaryPrefixExpression(state);
+        auto quoteNode = std::make_shared<SyntaxQuote>();
+        quoteNode->sourcePosition = state.sourcePositionFrom(startPosition);
+        quoteNode->value = term;
+        return quoteNode;
+    }
+
+    ValuePtr parseQuasiQuote(ParserState &state)
+    {
+        auto startPosition = state.position;
+        assert(state.peekKind() == TokenKind::QuasiQuote);
+        state.advance();
+        auto term = parseUnaryPrefixExpression(state);
+        auto quoteNode = std::make_shared<SyntaxQuasiQuote>();
+        quoteNode->sourcePosition = state.sourcePositionFrom(startPosition);
+        quoteNode->value = term;
+        return quoteNode;
+    }
+
+    ValuePtr parseQuasiUnquote(ParserState &state)
+    {
+        auto startPosition = state.position;
+        assert(state.peekKind() == TokenKind::QuasiUnquote);
+        state.advance();
+        auto term = parseUnaryPrefixExpression(state);
+        auto quoteNode = std::make_shared<SyntaxQuasiUnquote>();
+        quoteNode->sourcePosition = state.sourcePositionFrom(startPosition);
+        quoteNode->value = term;
+        return quoteNode;
+    }
+
+    ValuePtr parseSplice(ParserState &state)
+    {
+        auto startPosition = state.position;
+        assert(state.peekKind() == TokenKind::Splice);
+        state.advance();
+        auto term = parseUnaryPrefixExpression(state);
+        auto spliceNode = std::make_shared<SyntaxSplice>();
+        spliceNode->sourcePosition = state.sourcePositionFrom(startPosition);
+        spliceNode->value = term;
+        return spliceNode;
+    }
+
+    ValuePtr parseUnaryPrefixExpression(ParserState &state)
+    {
+        switch (state.peekKind())
+        {
+        case TokenKind::Quote:
+            return parseQuote(state);
+        case TokenKind::QuasiQuote:
+            return parseQuasiQuote(state);
+        case TokenKind::QuasiUnquote:
+            return parseQuasiUnquote(state);
+        case TokenKind::Splice:
+            return parseSplice(state);
+        default:
+            return parseUnaryPostfixExpression(state);
+        }
     }
 
     ValuePtr parseBinaryExpressionSequence(ParserState &state)
     {
         auto startPosition = state.position;
         auto operand = parseUnaryPrefixExpression(state);
-        if(!isBinaryExpressionOperator(state.peekKind()))
+        if (!isBinaryExpressionOperator(state.peekKind()))
             return operand;
-        
+
         std::vector<ValuePtr> elements;
         elements.push_back(operand);
-        while(isBinaryExpressionOperator(state.peekKind()))
+        while (isBinaryExpressionOperator(state.peekKind()))
         {
             auto operatorToken = state.next();
-            auto operatorNode = std::make_shared<SyntaxLiteralSymbol> ();
+            auto operatorNode = std::make_shared<SyntaxLiteralSymbol>();
             operatorNode->sourcePosition = operatorToken->position;
             operatorNode->value = operatorToken->getValue();
             elements.push_back(operatorNode);
@@ -364,7 +430,7 @@ namespace Sysmel
             elements.push_back(operand);
         }
 
-        auto binaryExpression = std::make_shared<SyntaxBinaryExpressionSequence> ();
+        auto binaryExpression = std::make_shared<SyntaxBinaryExpressionSequence>();
         binaryExpression->sourcePosition = state.sourcePositionFrom(startPosition);
         binaryExpression->elements.swap(elements);
         return binaryExpression;
@@ -375,12 +441,12 @@ namespace Sysmel
         auto startPosition = state.position;
         auto key = parseBinaryExpressionSequence(state);
 
-        if(state.peekKind() != TokenKind::Colon)
+        if (state.peekKind() != TokenKind::Colon)
             return key;
 
         state.advance();
         auto value = parseAssociationExpression(state);
-        auto assoc = std::make_shared<SyntaxAssociation> ();
+        auto assoc = std::make_shared<SyntaxAssociation>();
         assoc->sourcePosition = state.sourcePositionFrom(startPosition);
         assoc->key = key;
         assoc->value = value;
@@ -395,7 +461,7 @@ namespace Sysmel
         std::string symbolValue;
         std::vector<ValuePtr> arguments;
 
-        while(state.peekKind() == TokenKind::Keyword)
+        while (state.peekKind() == TokenKind::Keyword)
         {
             auto keywordToken = state.next();
             symbolValue.append(keywordToken->getValue());
@@ -404,26 +470,120 @@ namespace Sysmel
             arguments.push_back(argument);
         }
 
-        auto identifier = std::make_shared<SyntaxLiteralSymbol> ();
+        auto identifier = std::make_shared<SyntaxLiteralSymbol>();
         identifier->sourcePosition = state.sourcePositionFrom(startPosition);
         identifier->value = symbolValue;
 
-        auto messageSend = std::make_shared<SyntaxMessageSend> ();
+        auto messageSend = std::make_shared<SyntaxMessageSend>();
         messageSend->sourcePosition = state.sourcePositionFrom(startPosition);
         messageSend->selector = identifier;
         messageSend->arguments = arguments;
         return messageSend;
     }
 
+    ValuePtr parseKeywordMessageSend(ParserState &state)
+    {
+        auto startPosition = state.position;
+        auto receiver = parseAssociationExpression(state);
+        if(state.peekKind() != TokenKind::Keyword)
+            return receiver;
+        
+        std::string selectorValue;
+        std::vector<ValuePtr> arguments;
+
+        while(state.peekKind() == TokenKind::Keyword)
+        {
+            auto keywordToken = state.next();
+            selectorValue.append(keywordToken->getValue());
+
+            auto argument = parseAssociationExpression(state);
+            arguments.push_back(argument);
+        }
+
+        auto selectorSymbol = std::make_shared<SyntaxLiteralSymbol> ();
+        selectorSymbol->sourcePosition = state.sourcePositionFrom(startPosition);
+        selectorSymbol->value = selectorValue;
+
+        auto messageSend = std::make_shared<SyntaxMessageSend> ();
+        messageSend->sourcePosition = state.sourcePositionFrom(startPosition);
+        messageSend->receiver = receiver;
+        messageSend->selector = selectorSymbol;
+        messageSend->arguments.swap(arguments);
+        return messageSend;
+    }
+
+    ValuePtr parseCascadedMessage(ParserState &state)
+    {
+        auto startPosition = state.position;
+        auto token = state.peek();
+        if(state.peekKind() == TokenKind::Identifier)
+        {
+            state.advance();
+            
+            auto selector = std::make_shared<SyntaxLiteralSymbol> ();
+            selector->sourcePosition = token->getSourcePosition();
+            selector->value = token->getValue();
+
+            auto cascadedMessage = std::make_shared<SyntaxMessageCascadeMessage> ();
+            cascadedMessage->sourcePosition = state.sourcePositionFrom(startPosition);
+            cascadedMessage->selector = selector;
+            return cascadedMessage;
+        }
+        else if(state.peekKind() == TokenKind::Keyword)
+        {
+            std::string selectorValue;
+            std::vector<ValuePtr> arguments;
+
+            while(state.peekKind() == TokenKind::Keyword)
+            {
+                auto keywordToken = state.next();
+                selectorValue.append(keywordToken->getValue());
+
+                auto argument = parseBinaryExpressionSequence(state);
+                arguments.push_back(argument);
+            }
+
+            auto selector = std::make_shared<SyntaxLiteralSymbol> ();
+            selector->sourcePosition = state.sourcePositionFrom(startPosition);
+            selector->value = selectorValue;
+
+            auto cascadedMessage = std::make_shared<SyntaxMessageCascadeMessage> ();
+            cascadedMessage->sourcePosition = state.sourcePositionFrom(startPosition);
+            cascadedMessage->selector = selector;
+            cascadedMessage->arguments.swap(arguments);
+            return cascadedMessage;
+        }
+        else if(isBinaryExpressionOperator(state.peekKind()))
+        {
+
+        }
+        else
+        {
+            
+        }
+    }
+
     ValuePtr parseMessageCascade(ParserState &state)
     {
+        auto startPosition = state.position;
+        auto firstMessage = parseKeywordMessageSend(state);
+        if (state.peekKind() != TokenKind::Semicolon)
+            return firstMessage;
+        
+        auto messageCascade = firstMessage->asMessageCascade();
+        while (state.peekKind() == TokenKind::Semicolon)
+        {
+            state.advance();
+            auto cascadedMessage = parseCascadedMessage(state);
+        }
+
         // TODO: Implement this part
         return parseAssociationExpression(state);
     }
-    
+
     ValuePtr parseLowPrecedenceExpression(ParserState &state)
     {
-        if(state.peekKind() == TokenKind::Keyword)
+        if (state.peekKind() == TokenKind::Keyword)
             return parseKeywordApplication(state);
         return parseMessageCascade(state);
     }
@@ -436,7 +596,7 @@ namespace Sysmel
         {
             state.advance();
             auto assignedValue = parseAssignmentExpression(state);
-            auto assignment = std::make_shared<SyntaxAssignment> ();
+            auto assignment = std::make_shared<SyntaxAssignment>();
             assignment->sourcePosition = state.sourcePositionFrom(startPosition);
             assignment->store = assignedStore;
             assignment->value = assignedValue;
@@ -459,14 +619,14 @@ namespace Sysmel
         std::vector<ValuePtr> elements;
         elements.push_back(element);
 
-        while(state.peekKind() == TokenKind::Comma)
+        while (state.peekKind() == TokenKind::Comma)
         {
             state.advance();
             element = parseAssignmentExpression(state);
             elements.push_back(element);
         }
 
-        auto tuple = std::make_shared<SyntaxTuple> ();
+        auto tuple = std::make_shared<SyntaxTuple>();
         tuple->sourcePosition = state.sourcePositionFrom(startingPosition);
         tuple->elements = elements;
         return tuple;
@@ -477,11 +637,11 @@ namespace Sysmel
         auto startPosition = state.position;
         auto argumentPatternOrExpression = parseCommaExpression(state);
 
-        if(state.peekKind() == TokenKind::ColonColon)
+        if (state.peekKind() == TokenKind::ColonColon)
         {
             state.advance();
             auto resultTypeExpression = parseFunctionalType(state);
-            auto functionalType = std::make_shared<SyntaxFunctionalDependentType> ();
+            auto functionalType = std::make_shared<SyntaxFunctionalDependentType>();
             functionalType->sourcePosition = state.sourcePositionFrom(startPosition);
             functionalType->argumentPattern = argumentPatternOrExpression;
             functionalType->resultType = resultTypeExpression;
@@ -544,16 +704,14 @@ namespace Sysmel
             return parseParenthesis(state);
         case TokenKind::LeftCurlyBracket:
             return parseBlock(state);
+        // case TokenKind::DictionaryStart:
+        //     return parseDictionary(state);
+        // case TokenKind::Colon:
+        //     return parseBindableName(state);
         default:
             return parseLiteral(state);
         }
     }
-
-    /*def parseTerm(state: ParserState) -> tuple[ParserState, ParseTreeNode]:
-        elif state.peekKind() == TokenKind.LEFT_CURLY_BRACKET: return parseBlock(state)
-        elif state.peekKind() == TokenKind.DICTIONARY_START: return parseDictionary(state)
-        elif state.peekKind() == TokenKind.COLON: return parseBindableName(state)
-    */
 
     ValuePtr parseFunctionalTypeWithOptionalArgument(ParserState &state)
     {
@@ -567,7 +725,7 @@ namespace Sysmel
             functionalNode->resultType = resultTypeExpression;
             return functionalNode;
         }
-        else 
+        else
         {
             return parseFunctionalType(state);
         }
@@ -643,6 +801,7 @@ namespace Sysmel
     {
         return parseSequenceUntilEndOrDelimiter(state, TokenKind::EndOfSource);
     }
+
     ValuePtr parseTokens(const SourceCodePtr &sourceCode, const std::vector<TokenPtr> &tokens)
     {
         auto state = ParserState{sourceCode, &tokens};
