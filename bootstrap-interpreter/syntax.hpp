@@ -55,6 +55,29 @@ public:
     ValuePtr value;
 };
 
+class SyntaxDictionary : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxDictionary(";
+        bool isFirst = true;
+        for (auto &element : elements)
+        {
+            if(isFirst)
+                isFirst = false;
+            else
+                out << ". ";
+            out << element->printString();
+        }
+        out << ")";
+        return out.str();
+    }
+
+    std::vector<ValuePtr> elements;
+};
+
 class SyntaxTuple : public SyntacticValue
 {
 public:
@@ -150,6 +173,16 @@ public:
 class SyntaxBlock : public SyntacticValue
 {
 public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxBlock(";
+        if(functionType)
+            out << functionType->printString() << ", ";
+        out << body->printString() << ")";
+        return out.str();
+    }
+
     ValuePtr functionType;
     ValuePtr body;
 };
@@ -157,6 +190,16 @@ public:
 class SyntaxLexicalBlock : public SyntacticValue
 {
 public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxLexicalBlock(";
+        if(body)
+            out << body->printString();
+        out << ")";
+        return out.str();
+    }
+
     ValuePtr body;
 };
 

@@ -149,7 +149,9 @@ namespace Sysmel
     ValuePtr parseSequenceUntilEndOrDelimiter(ParserState &state, TokenKind delimiter);
     ValuePtr parseTerm(ParserState &state);
     ValuePtr parseUnaryPrefixExpression(ParserState &state);
-
+    ValuePtr parseBlock(ParserState &state);
+    ValuePtr parseDictionary(ParserState &state);
+    
     int64_t parseIntegerConstant(const std::string &constant)
     {
         int64_t result = 0;
@@ -382,23 +384,58 @@ namespace Sysmel
                 }
                 break;
             case TokenKind::LeftParent:
-            case TokenKind::LeftBracket:
                 {
                     state.advance();
                     auto arguments = parseExpressionListUntilEndOrDelimiter(state, TokenKind::RightParent);
                     if(state.peekKind() == TokenKind::RightParent)
-                    {
                         state.advance();
-                    }
                     else
-                    {
                         arguments.push_back(state.makeErrorAtCurrentSourcePosition("Expected a right parenthesis"));
-                    }
                     
                     auto application = std::make_shared<SyntaxApplication> ();
                     application->sourcePosition = state.sourcePositionFrom(startPosition);
                     application->functional = receiver;
                     application->arguments = arguments;
+                    application->kind = token->kind;
+                    receiver = application;
+                }
+                break;
+            case TokenKind::LeftBracket:
+            case TokenKind::ByteArrayStart:
+                {
+                    state.advance();
+                    auto arguments = parseExpressionListUntilEndOrDelimiter(state, TokenKind::RightBracket);
+                    if(state.peekKind() == TokenKind::RightBracket)
+                        state.advance();
+                    else
+                        arguments.push_back(state.makeErrorAtCurrentSourcePosition("Expected a right bracket"));
+                    
+                    auto application = std::make_shared<SyntaxApplication> ();
+                    application->sourcePosition = state.sourcePositionFrom(startPosition);
+                    application->functional = receiver;
+                    application->arguments = arguments;
+                    application->kind = token->kind;
+                    receiver = application;
+                }
+                break;
+            case TokenKind::LeftCurlyBracket:
+                {
+                    auto argument = parseBlock(state);
+                    auto application = std::make_shared<SyntaxApplication> ();
+                    application->sourcePosition = state.sourcePositionFrom(startPosition);
+                    application->functional = receiver;
+                    application->arguments.push_back(argument);
+                    application->kind = token->kind;
+                    receiver = application;
+                }
+                break;
+            case TokenKind::DictionaryStart:
+                {
+                    auto argument = parseDictionary(state);
+                    auto application = std::make_shared<SyntaxApplication> ();
+                    application->sourcePosition = state.sourcePositionFrom(startPosition);
+                    application->functional = receiver;
+                    application->arguments.push_back(argument);
                     application->kind = token->kind;
                     receiver = application;
                 }
@@ -771,6 +808,99 @@ namespace Sysmel
             return lexicalBlock;
         }
     }
+/*def parseDictionaryAssociation(state: ParserState) -> tuple[ParserState, ParseTreeNode]:
+    startPosition = state.position
+    value = None
+    if state.peekKind() == TokenKind.KEYWORD:
+        keyToken = state.next()
+        key = ParseTreeLiteralSymbolNode(keyToken.sourcePosition, keyToken.getStringValue()[:-1])
+
+        if state.peekKind() not in [TokenKind.DOT, TokenKind.RIGHT_CURLY_BRACKET]:
+            state, value = parseAssociationExpression(state)
+    else:
+        state, key = parseBinaryExpressionSequence(state)
+        if state.peekKind() == TokenKind.COLON:
+            state.advance()
+            state, value = parseAssociationExpression(state)
+
+    return state, ParseTreeTupleNode(state.sourcePositionFrom(startPosition), [key, value])*/
+
+    ValuePtr parseDictionaryAssociation(ParserState &state)
+    {
+        auto startPosition = state.position;
+        ValuePtr key;
+        ValuePtr value;
+        if(state.peekKind() == TokenKind::Keyword)
+        {
+            auto keyToken = state.next();
+            auto keyTokenValue = keyToken->getValue();
+            auto keySymbol = std::make_shared<SyntaxLiteralSymbol> ();
+            keySymbol->sourcePosition = keyToken->position;
+            keySymbol->value = keyTokenValue.substr(0, keyTokenValue.size() - 1);
+            key = keySymbol;
+
+            if(state.peekKind() != TokenKind::Dot && state.peekKind() != TokenKind::RightCurlyBracket)
+                value = parseAssociationExpression(state);
+        }
+        else
+        {
+            key = parseBinaryExpressionSequence(state);
+            if(state.peekKind() == TokenKind::Colon)
+            {
+                state.advance();
+                value = parseAssociationExpression(state);
+            }
+        }
+
+        auto dictAssociation = std::make_shared<SyntaxAssociation> ();
+        dictAssociation->sourcePosition = state.sourcePositionFrom(startPosition);
+        dictAssociation->key = key;
+        dictAssociation->value = value;
+        return dictAssociation;
+    }
+
+    ValuePtr parseDictionary(ParserState &state)
+    {
+        // {
+        auto startPosition = state.position;
+        assert(state.peekKind() == TokenKind::DictionaryStart);
+        state.advance();
+
+        // Chop the initial dots
+        while (state.peekKind() == TokenKind::Dot)
+            state.advance();
+
+        // Parse the next expression
+        bool expectsExpression = true;
+        std::vector<ValuePtr> elements;
+        while (!state.atEnd() and state.peekKind() != TokenKind::RightCurlyBracket)
+        {
+            if (!expectsExpression)
+                elements.push_back(state.makeErrorAtCurrentSourcePosition("Expected dot before association."));
+
+            auto expression = parseDictionaryAssociation(state);
+            elements.push_back(expression);
+
+            expectsExpression = false;
+            // Chop the next dot sequence
+            while (state.peekKind() == TokenKind::Dot)
+            {
+                expectsExpression = true;
+                state.advance();
+            }
+        }
+
+        // }
+        if(state.peekKind() == TokenKind::RightCurlyBracket)
+            state.advance();
+        else
+            elements.push_back(state.makeErrorAtCurrentSourcePosition("Expected a right curly bracket."));
+
+        auto dictionary = std::make_shared<SyntaxDictionary> ();
+        dictionary->sourcePosition = state.sourcePositionFrom(startPosition);
+        dictionary->elements.swap(elements);
+        return dictionary;
+    }
 
     ValuePtr parseTerm(ParserState &state)
     {
@@ -782,8 +912,8 @@ namespace Sysmel
             return parseParenthesis(state);
         case TokenKind::LeftCurlyBracket:
             return parseBlock(state);
-        // case TokenKind::DictionaryStart:
-        //     return parseDictionary(state);
+         case TokenKind::DictionaryStart:
+             return parseDictionary(state);
         // case TokenKind::Colon:
         //     return parseBindableName(state);
         default:
