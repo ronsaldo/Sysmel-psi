@@ -230,6 +230,29 @@ public:
     std::string value;    
 };
 
+class SyntaxBinaryExpressionSequence : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxBinaryExpressionSequence(";
+        bool isFirst = true;
+        for(auto &element : elements)
+        {
+            if(isFirst)
+                isFirst = false;
+            else
+                out << ", ";
+            out << element->printString();
+        }
+        out << ")";
+        return out.str();
+    }
+
+    std::vector<ValuePtr> elements;
+};
+
 class SyntaxMessageSend : public SyntacticValue
 {
 public:
@@ -244,6 +267,7 @@ public:
         {
             out << ", " << argument->printString();
         }
+        out << ")";
         return out.str();
     }
 

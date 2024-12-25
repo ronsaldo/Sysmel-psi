@@ -338,10 +338,36 @@ namespace Sysmel
         return expression;
     }
 
+    ValuePtr parseUnaryPrefixExpression(ParserState &state)
+    {
+        return parseTerm(state);
+    }
+
     ValuePtr parseBinaryExpressionSequence(ParserState &state)
     {
         auto startPosition = state.position;
-        return parseTerm(state);
+        auto operand = parseUnaryPrefixExpression(state);
+        if(!isBinaryExpressionOperator(state.peekKind()))
+            return operand;
+        
+        std::vector<ValuePtr> elements;
+        elements.push_back(operand);
+        while(isBinaryExpressionOperator(state.peekKind()))
+        {
+            auto operatorToken = state.next();
+            auto operatorNode = std::make_shared<SyntaxLiteralSymbol> ();
+            operatorNode->sourcePosition = operatorToken->position;
+            operatorNode->value = operatorToken->getValue();
+            elements.push_back(operatorNode);
+
+            auto operand = parseUnaryPrefixExpression(state);
+            elements.push_back(operand);
+        }
+
+        auto binaryExpression = std::make_shared<SyntaxBinaryExpressionSequence> ();
+        binaryExpression->sourcePosition = state.sourcePositionFrom(startPosition);
+        binaryExpression->elements.swap(elements);
+        return binaryExpression;
     }
 
     ValuePtr parseAssociationExpression(ParserState &state)
