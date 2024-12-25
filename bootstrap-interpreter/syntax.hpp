@@ -55,6 +55,35 @@ public:
     ValuePtr value;
 };
 
+class SyntaxBindableName : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxBindableName(";
+        if(typeExpression)
+            out << typeExpression->printString();
+        if(nameExpression)
+        {
+            if(typeExpression)
+                out << ", "; 
+            out << nameExpression->printString();
+        }
+
+        out << ")";
+        return out.str();
+    }
+
+    ValuePtr typeExpression;
+    ValuePtr nameExpression;
+    bool isImplicit = false;
+    bool isExistential = false;
+    bool isVariadic = false;
+    bool isMutable = false;
+    bool hasPostTypeExpression = false;
+};
+
 class SyntaxDictionary : public SyntacticValue
 {
 public:

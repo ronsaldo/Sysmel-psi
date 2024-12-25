@@ -151,7 +151,8 @@ namespace Sysmel
     ValuePtr parseUnaryPrefixExpression(ParserState &state);
     ValuePtr parseBlock(ParserState &state);
     ValuePtr parseDictionary(ParserState &state);
-    
+    ValuePtr parseExpression(ParserState &state);
+
     int64_t parseIntegerConstant(const std::string &constant)
     {
         int64_t result = 0;
@@ -910,24 +911,19 @@ namespace Sysmel
         }
     }
 
-    /*
-    def parseNameExpression(state: ParserState) -> tuple[ParserState, ParseTreeNode]:
-    if state.peekKind() == TokenKind.IDENTIFIER:
-        token = state.next()
-        return state, ParseTreeLiteralSymbolNode(token.sourcePosition, token.getStringValue())
-    else:
-        return state, ParseTreeErrorNode(state.currentSourcePosition(), 'Expected a bindable name.')
-    */
-
     ValuePtr parseNameExpression(ParserState &state)
     {
         if(state.peekKind() == TokenKind::Identifier)
         {
             auto token = state.next();
+            auto nameSymbol = std::make_shared<SyntaxLiteralSymbol> ();
+            nameSymbol->sourcePosition = token->position;
+            nameSymbol->value = token->getValue();
+            return nameSymbol;
         }
         else
         {
-            return state.makeErrorAtCurrentSourcePosition("Expected a bindable name.")
+            return state.makeErrorAtCurrentSourcePosition("Expected a bindable name.");
         }
     }
 
@@ -966,8 +962,31 @@ namespace Sysmel
         }
         else
         {
-            nameExpression = parseNameExpression(state)
+            nameExpression = parseNameExpression(state);
+            if(!typeExpression)
+            {
+                parseOptionalBindableNameType(state, isImplicit, typeExpression);
+                hasPostTypeExpression = typeExpression.get() != nullptr;    
+            }
+
+            if(state.peekKind() == TokenKind::Ellipsis)
+            {
+                state.advance();
+                isVariadic = true;
+            }
         }
+
+        auto bindableName = std::make_shared<SyntaxBindableName> ();
+        bindableName->sourcePosition = state.sourcePositionFrom(startPosition);
+        bindableName->typeExpression = typeExpression;
+        bindableName->nameExpression = nameExpression;
+
+        bindableName->isImplicit    = isImplicit;
+        bindableName->isExistential = isExistential;
+        bindableName->isVariadic    = isVariadic;
+        bindableName->isMutable     = isMutable;
+        bindableName->hasPostTypeExpression = hasPostTypeExpression;
+        return bindableName;
     }
 
     ValuePtr parseTerm(ParserState &state)
