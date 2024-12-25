@@ -41,6 +41,20 @@ public:
     std::vector<ValuePtr> elements;
 };
 
+class SyntaxAssociation : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxAssociation(" << key->printString() << " : " << value->printString() << ")";
+        return out.str();
+    }
+
+    ValuePtr key;
+    ValuePtr value;
+};
+
 class SyntaxTuple : public SyntacticValue
 {
 public:
@@ -90,6 +104,60 @@ public:
     }
 
     std::string value;    
+};
+
+class SyntaxFunctionalDependentType : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxFunctionalDependentType(";
+        if (argumentPattern)
+            out << argumentPattern->printString();
+        if (resultType)
+            out << " :: " <<  resultType->printString();
+        return out.str();
+    }
+
+    ValuePtr argumentPattern;
+    ValuePtr resultType;
+};
+
+typedef std::shared_ptr<SyntaxFunctionalDependentType> SyntaxFunctionalDependentTypePtr;
+
+class SyntaxAssignment : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxAssignment(" << store->printString() << " := " << value->printString() << ")";
+        return out.str();
+    }
+
+    ValuePtr store;
+    ValuePtr value;
+};
+
+class SyntaxBindPattern : public SyntacticValue
+{
+public:
+    ValuePtr pattern;
+    ValuePtr value;
+};
+
+class SyntaxBlock : public SyntacticValue
+{
+public:
+    ValuePtr functionType;
+    ValuePtr body;
+};
+
+class SyntaxLexicalBlock : public SyntacticValue
+{
+public:
+    ValuePtr body;
 };
 
 class SyntaxLiteral : public SyntacticValue
@@ -160,6 +228,28 @@ public:
     }
 
     std::string value;    
+};
+
+class SyntaxMessageSend : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxMessageSend(";
+        if(receiver)
+            out << receiver->printString() << ",";
+        out << selector->printString();
+        for(auto &argument : arguments)
+        {
+            out << ", " << argument->printString();
+        }
+        return out.str();
+    }
+
+    ValuePtr receiver;
+    ValuePtr selector;
+    std::vector<ValuePtr> arguments;
 };
 
 } // end of namespace Sysmel

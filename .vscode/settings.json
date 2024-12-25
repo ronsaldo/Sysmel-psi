@@ -57,7 +57,8 @@
         "thread": "cpp",
         "typeinfo": "cpp",
         "__nullptr": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "sstream": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }
