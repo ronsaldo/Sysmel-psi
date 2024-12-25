@@ -808,22 +808,6 @@ namespace Sysmel
             return lexicalBlock;
         }
     }
-/*def parseDictionaryAssociation(state: ParserState) -> tuple[ParserState, ParseTreeNode]:
-    startPosition = state.position
-    value = None
-    if state.peekKind() == TokenKind.KEYWORD:
-        keyToken = state.next()
-        key = ParseTreeLiteralSymbolNode(keyToken.sourcePosition, keyToken.getStringValue()[:-1])
-
-        if state.peekKind() not in [TokenKind.DOT, TokenKind.RIGHT_CURLY_BRACKET]:
-            state, value = parseAssociationExpression(state)
-    else:
-        state, key = parseBinaryExpressionSequence(state)
-        if state.peekKind() == TokenKind.COLON:
-            state.advance()
-            state, value = parseAssociationExpression(state)
-
-    return state, ParseTreeTupleNode(state.sourcePositionFrom(startPosition), [key, value])*/
 
     ValuePtr parseDictionaryAssociation(ParserState &state)
     {
@@ -901,6 +885,90 @@ namespace Sysmel
         dictionary->elements.swap(elements);
         return dictionary;
     }
+    
+
+    void parseOptionalBindableNameType(ParserState &state, bool &outIsImplicit, ValuePtr &outTypeExpression)
+    {
+        if(state.peekKind() == TokenKind::LeftBracket)
+        {
+            state.advance();
+            outTypeExpression = parseExpression(state);
+            outTypeExpression = state.expectAddingErrorToNode(TokenKind::RightBracket, outTypeExpression);
+            outIsImplicit = true;
+        }
+        else if(state.peekKind() == TokenKind::LeftParent)
+        {
+            state.advance();
+            outTypeExpression = parseExpression(state);
+            outTypeExpression = state.expectAddingErrorToNode(TokenKind::RightParent, outTypeExpression);
+            outIsImplicit = false;
+        }
+        else
+        {
+            outIsImplicit = false;
+            outTypeExpression.reset();
+        }
+    }
+
+    /*
+    def parseNameExpression(state: ParserState) -> tuple[ParserState, ParseTreeNode]:
+    if state.peekKind() == TokenKind.IDENTIFIER:
+        token = state.next()
+        return state, ParseTreeLiteralSymbolNode(token.sourcePosition, token.getStringValue())
+    else:
+        return state, ParseTreeErrorNode(state.currentSourcePosition(), 'Expected a bindable name.')
+    */
+
+    ValuePtr parseNameExpression(ParserState &state)
+    {
+        if(state.peekKind() == TokenKind::Identifier)
+        {
+            auto token = state.next();
+        }
+        else
+        {
+            return state.makeErrorAtCurrentSourcePosition("Expected a bindable name.")
+        }
+    }
+
+    ValuePtr parseBindableName(ParserState &state)
+    {
+        auto startPosition = state.position;
+        assert(state.peekKind() == TokenKind::Colon);
+        state.advance();
+
+        bool isExistential = false;
+        bool isMutable = false;
+
+        if (state.peekKind() == TokenKind::Bang)
+        {
+            isMutable = true;
+            state.advance();
+        }
+        if (state.peekKind() == TokenKind::Question)
+        {
+            isExistential = isExistential || (state.peekKind() == TokenKind::Question);
+            state.advance();
+        }
+
+        bool isImplicit = false;
+        ValuePtr typeExpression;
+        parseOptionalBindableNameType(state, isImplicit, typeExpression);
+        bool hasPostTypeExpression = false;
+
+        bool isVariadic = false;
+        ValuePtr nameExpression;
+        if (state.peekKind() == TokenKind::Ellipsis)
+        {
+            state.advance();
+            isVariadic = true;
+            nameExpression.reset();
+        }
+        else
+        {
+            nameExpression = parseNameExpression(state)
+        }
+    }
 
     ValuePtr parseTerm(ParserState &state)
     {
@@ -914,8 +982,8 @@ namespace Sysmel
             return parseBlock(state);
          case TokenKind::DictionaryStart:
              return parseDictionary(state);
-        // case TokenKind::Colon:
-        //     return parseBindableName(state);
+        case TokenKind::Colon:
+             return parseBindableName(state);
         default:
             return parseLiteral(state);
         }
