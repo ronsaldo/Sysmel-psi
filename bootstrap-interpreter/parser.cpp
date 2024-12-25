@@ -145,6 +145,7 @@ namespace Sysmel
         }
     };
 
+    std::vector<ValuePtr> parseExpressionListUntilEndOrDelimiter(ParserState &state, TokenKind delimiter);
     ValuePtr parseSequenceUntilEndOrDelimiter(ParserState &state, TokenKind delimiter);
     ValuePtr parseTerm(ParserState &state);
     ValuePtr parseUnaryPrefixExpression(ParserState &state);
@@ -339,9 +340,74 @@ namespace Sysmel
         return expression;
     }
 
+    bool isUnaryPostfixTokenKind(TokenKind kind)
+    {
+        switch(kind)
+        {
+        case TokenKind::Identifier:
+        case TokenKind::LeftParent:
+        case TokenKind::LeftBracket:
+        case TokenKind::LeftCurlyBracket:
+        case TokenKind::ByteArrayStart:
+        case TokenKind::DictionaryStart:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     ValuePtr parseUnaryPostfixExpression(ParserState &state)
     {
-        return parseTerm(state);
+        auto startPosition = state.position;
+        auto receiver = parseTerm(state);
+
+        while (isUnaryPostfixTokenKind(state.peekKind()))
+        {
+            auto token = state.peek();
+            switch(token->kind)
+            {
+            case TokenKind::Identifier:
+                {
+                    state.advance();
+                    auto selector = std::make_shared<SyntaxLiteralSymbol> ();
+                    selector->sourcePosition = token->position;
+                    selector->value = token->getValue();
+
+                    auto message = std::make_shared<SyntaxMessageSend> ();
+                    message->sourcePosition = state.sourcePositionFrom(startPosition);
+                    message->receiver = receiver;
+                    message->selector = selector;
+                    
+                    receiver = message;
+                }
+                break;
+            case TokenKind::LeftParent:
+            case TokenKind::LeftBracket:
+                {
+                    state.advance();
+                    auto arguments = parseExpressionListUntilEndOrDelimiter(state, TokenKind::RightParent);
+                    if(state.peekKind() == TokenKind::RightParent)
+                    {
+                        state.advance();
+                    }
+                    else
+                    {
+                        arguments.push_back(state.makeErrorAtCurrentSourcePosition("Expected a right parenthesis"));
+                    }
+                    
+                    auto application = std::make_shared<SyntaxApplication> ();
+                    application->sourcePosition = state.sourcePositionFrom(startPosition);
+                    application->functional = receiver;
+                    application->arguments = arguments;
+                    application->kind = token->kind;
+                    receiver = application;
+                }
+                break;
+            default:
+                return receiver;
+            }
+        }
+        return receiver;
     }
 
     ValuePtr parseQuote(ParserState &state)
@@ -555,11 +621,22 @@ namespace Sysmel
         }
         else if(isBinaryExpressionOperator(state.peekKind()))
         {
+            state.advance();
+            auto selector = std::make_shared<SyntaxLiteralSymbol> ();
+            selector->sourcePosition = state.sourcePositionFrom(startPosition);
+            selector->value = token->getValue();
 
+            auto argument = parseUnaryPostfixExpression(state);
+
+            auto cascadedMessage = std::make_shared<SyntaxMessageCascadeMessage> ();
+            cascadedMessage->sourcePosition = state.sourcePositionFrom(startPosition);
+            cascadedMessage->selector = selector;
+            cascadedMessage->arguments.push_back(argument);
+            return cascadedMessage;
         }
         else
         {
-            
+            return state.makeErrorAtCurrentSourcePosition("Expected a cascaded message.");
         }
     }
 
@@ -575,10 +652,11 @@ namespace Sysmel
         {
             state.advance();
             auto cascadedMessage = parseCascadedMessage(state);
+            messageCascade->messages.push_back(cascadedMessage);
         }
 
-        // TODO: Implement this part
-        return parseAssociationExpression(state);
+        messageCascade->sourcePosition = state.sourcePositionFrom(startPosition);
+        return messageCascade;
     }
 
     ValuePtr parseLowPrecedenceExpression(ParserState &state)

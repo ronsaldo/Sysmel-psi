@@ -294,6 +294,26 @@ public:
     std::vector<ValuePtr> arguments;
 };
 
+class SyntaxApplication : public SyntacticValue
+{
+public:
+    virtual std::string printString() const override
+    {
+        std::ostringstream out;
+        out << "SyntaxApplication(" << functional->printString();
+        for(auto &argument : arguments)
+        {
+            out << ", " << argument->printString();
+        }
+        out << ")";
+        return out.str();
+    }
+
+    ValuePtr functional;
+    std::vector<ValuePtr> arguments;
+    TokenKind kind;
+};
+
 typedef std::shared_ptr<SyntaxMessageCascade> SyntaxMessageCascadePtr;
 
 class SyntaxMessageSend : public SyntacticValue
@@ -325,6 +345,7 @@ public:
         messageCascade->sourcePosition = sourcePosition;
         messageCascade->receiver = receiver;
         messageCascade->messages.push_back(firstMessage);
+        return messageCascade;
     }
 
     ValuePtr receiver;
