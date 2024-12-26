@@ -1,5 +1,6 @@
 #include "scanner.hpp"
 #include "parser.hpp"
+#include "syntax.hpp"
 #include <stdio.h>
 #include <string.h>
 #include <vector>
@@ -19,7 +20,51 @@ void printVersion()
     printf("bootstrap-interpreter version 0.1");
 }
 
-void evaluateAndPrintString(const std::string &sourceText)
+void dumpTokens(const std::vector<TokenPtr> &tokens)
+{
+    for(auto token : tokens)
+    {
+        if(token->errorMessage.empty())
+            printf("%s\n", getTokenKindName(token->kind));
+        else
+            printf("%s: %s\n", getTokenKindName(token->kind), token->errorMessage.c_str());
+    }
+}
+
+void dumpParseTree(const ValuePtr &parseTree)
+{
+    auto parseTreeString = parseTree->printString();
+    printf("%s\n", parseTreeString.c_str());
+}
+
+bool checkSyntaxErrors(ValuePtr parseTree)
+{
+    auto parseErrors = parseTree->collectSyntaxErrors();
+    for(auto &parseError : parseErrors)
+    {
+        auto position = parseError->sourcePosition;
+        fprintf(stderr, "%s:%ld.%ld-%ld.%ld: %s\n",
+            position->sourceCode->name.c_str(),
+            position->startLine, position->startColumn,
+            position->endLine, position->endColumn,
+            parseError->errorMessage.c_str());
+    }
+    return !parseErrors.empty();
+}
+
+ValuePtr evaluateSourceCode(const SourceCodePtr &sourceCode)
+{
+    auto tokens = scanSourceCode(sourceCode);
+    dumpTokens(tokens);
+    
+    auto parseTree = parseTokens(sourceCode, tokens);
+    //dumpParseTree(parseTree);
+    if(checkSyntaxErrors(parseTree))
+        return nullptr;
+    return parseTree;
+}
+
+bool evaluateAndPrintString(const std::string &sourceText)
 {
     auto sourceCode = std::make_shared<SourceCode> ();
     sourceCode->directory = ".";
@@ -27,17 +72,12 @@ void evaluateAndPrintString(const std::string &sourceText)
     sourceCode->language = "sysmel";
     sourceCode->text = sourceText;
 
-    auto tokens = scanSourceCode(sourceCode);
-    /*for(auto token : tokens)
-    {
-        if(token->errorMessage.empty())
-            printf("%s\n", getTokenKindName(token->kind));
-        else
-            printf("%s: %s\n", getTokenKindName(token->kind), token->errorMessage.c_str());
-    }*/
-    auto parseTree = parseTokens(sourceCode, tokens);
-    auto parseTreeString = parseTree->printString();
-    printf("%s\n", parseTreeString.c_str());
+    auto evaluationResult = evaluateSourceCode(sourceCode);
+    if(!evaluationResult)
+        return false;
+
+    printf("%s\n", evaluationResult->printString().c_str());
+    return true;
 }
 
 int main(int argc, const char **argv)
@@ -61,8 +101,8 @@ int main(int argc, const char **argv)
             }
             else if(!strcmp(argument, "-ep") && i + 1 < argc)
             {
-                evaluateAndPrintString(argv[++i]);
-                
+                if(!evaluateAndPrintString(argv[++i]))
+                    return 1;
             }
         }
         else

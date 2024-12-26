@@ -38,6 +38,15 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        for(auto &element : elements)
+        {
+            function(element);
+            element->traverseChildren(function);
+        }
+    }
+
     std::vector<ValuePtr> elements;
 };
 
@@ -49,6 +58,21 @@ public:
         std::ostringstream out;
         out << "SyntaxAssociation(" << key->printString() << " : " << value->printString() << ")";
         return out.str();
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(key)
+        {
+            function(key);
+            key->traverseChildren(function);
+        }
+
+        if(value)
+        {
+            function(value);
+            value->traverseChildren(function);
+        }
     }
 
     ValuePtr key;
@@ -73,6 +97,21 @@ public:
 
         out << ")";
         return out.str();
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(typeExpression)
+        {
+            function(typeExpression);
+            typeExpression->traverseChildren(function);
+        }
+
+        if(nameExpression)
+        {
+            function(nameExpression);
+            nameExpression->traverseChildren(function);
+        }
     }
 
     ValuePtr typeExpression;
@@ -104,6 +143,15 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        for(const auto &element : elements)
+        {
+            function(element);
+            element->traverseChildren(function);
+        }
+    }
+
     std::vector<ValuePtr> elements;
 };
 
@@ -124,6 +172,15 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        for(const auto &element : elements)
+        {
+            function(element);
+            element->traverseChildren(function);
+        }
+    }
+
     std::vector<ValuePtr> elements;
 };
 
@@ -131,6 +188,11 @@ public:
 class SyntaxError : public SyntacticValue
 {
 public:
+    virtual bool isSyntaxError() const override
+    {
+        return true;
+    }
+    
     virtual std::string printString() const override
     {
         std::ostringstream out;
@@ -139,6 +201,15 @@ public:
             out << ": " << innerNode->printString();
         out << ")";
         return out.str();
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(innerNode)
+        {
+            function(innerNode);
+            innerNode->traverseChildren(function);
+        }
     }
 
     std::string errorMessage;
@@ -172,6 +243,20 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(argumentPattern)
+        {
+            function(argumentPattern);
+            argumentPattern->traverseChildren(function);
+        }
+        if(resultType)
+        {
+            function(resultType);
+            resultType->traverseChildren(function);
+        }
+    }
+
     ValuePtr argumentPattern;
     ValuePtr resultType;
 };
@@ -188,6 +273,20 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(store)
+        {
+            function(store);
+            store->traverseChildren(function);
+        }
+        if(value)
+        {
+            function(value);
+            value->traverseChildren(function);
+        }
+    }
+
     ValuePtr store;
     ValuePtr value;
 };
@@ -195,6 +294,21 @@ public:
 class SyntaxBindPattern : public SyntacticValue
 {
 public:
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(pattern)
+        {
+            function(pattern);
+            pattern->traverseChildren(function);
+        }
+        if(value)
+        {
+            function(value);
+            value->traverseChildren(function);
+        }
+    }
+
     ValuePtr pattern;
     ValuePtr value;
 };
@@ -212,6 +326,20 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(functionType)
+        {
+            function(functionType);
+            functionType->traverseChildren(function);
+        }
+        if(body)
+        {
+            function(body);
+            body->traverseChildren(function);
+        }
+    }
+
     ValuePtr functionType;
     ValuePtr body;
 };
@@ -227,6 +355,15 @@ public:
             out << body->printString();
         out << ")";
         return out.str();
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(body)
+        {
+            function(body);
+            body->traverseChildren(function);
+        }
     }
 
     ValuePtr body;
@@ -322,6 +459,15 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        for(const auto &element : elements)
+        {
+            function(element);
+            element->traverseChildren(function);
+        }
+    }
+
     std::vector<ValuePtr> elements;
 };
 
@@ -340,6 +486,20 @@ public:
         }
         out << ")";
         return out.str();
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(receiver)
+        {
+            function(receiver);
+            receiver->traverseChildren(function);
+        }
+        for(const auto &element : messages)
+        {
+            function(element);
+            element->traverseChildren(function);
+        }
     }
 
     ValuePtr receiver;
@@ -362,6 +522,20 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(selector)
+        {
+            function(selector);
+            selector->traverseChildren(function);
+        }
+        for(const auto &argument : arguments)
+        {
+            function(argument);
+            argument->traverseChildren(function);
+        }
+    }
+
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
 };
@@ -379,6 +553,20 @@ public:
         }
         out << ")";
         return out.str();
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(functional)
+        {
+            function(functional);
+            functional->traverseChildren(function);
+        }
+        for(const auto &argument : arguments)
+        {
+            function(argument);
+            argument->traverseChildren(function);
+        }
     }
 
     ValuePtr functional;
@@ -420,6 +608,25 @@ public:
         return messageCascade;
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(receiver)
+        {
+            function(receiver);
+            receiver->traverseChildren(function);
+        }
+        if(selector)
+        {
+            function(selector);
+            selector->traverseChildren(function);
+        }
+        for(const auto &argument : arguments)
+        {
+            function(argument);
+            argument->traverseChildren(function);
+        }
+    }
+
     ValuePtr receiver;
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
@@ -437,6 +644,15 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(value)
+        {
+            function(value);
+            value->traverseChildren(function);
+        }
+    }
+
     ValuePtr value;
 };
 
@@ -448,6 +664,15 @@ public:
         std::ostringstream out;
         out << "SyntaxQuasiQuote(" << value->printString() << ")";
         return out.str();
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(value)
+        {
+            function(value);
+            value->traverseChildren(function);
+        }
     }
 
     ValuePtr value;
@@ -463,6 +688,15 @@ public:
         return out.str();
     }
 
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(value)
+        {
+            function(value);
+            value->traverseChildren(function);
+        }
+    }
+
     ValuePtr value;
 };
 
@@ -474,6 +708,15 @@ public:
         std::ostringstream out;
         out << "SyntaxSplice(" << value->printString() << ")";
         return out.str();
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(value)
+        {
+            function(value);
+            value->traverseChildren(function);
+        }
     }
 
     ValuePtr value;
