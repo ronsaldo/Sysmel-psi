@@ -17,7 +17,9 @@ public:
     TypeUniverse(int index = 0)
         : universeIndex(index) {}
 
-    virtual ValuePtr getType() const;
+    virtual bool isType() const override { return true; }
+
+    virtual ValuePtr getType();
 
     virtual std::string printString() const {
         std::ostringstream out;
@@ -36,6 +38,9 @@ private:
 class Type : public Value
 {
 public:
+    virtual bool isType() const override { return true; }
+    virtual ValuePtr getType();
+
     virtual std::string printString() const {return "a Type";}
 
     static TypePtr uniqueInstance();
@@ -44,6 +49,9 @@ public:
 class GradualType : public Value
 {
 public:
+    virtual bool isType() const override { return true; }
+    virtual ValuePtr getType();
+
     virtual std::string printString() const {return "?";}
     
     static GradualTypePtr uniqueInstance();

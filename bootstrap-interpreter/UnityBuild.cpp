@@ -6,4 +6,7 @@
 #include "Object.cpp"
 #include "Syntax.cpp"
 #include "Parser.cpp"
+#include "Environment.cpp"
+#include "Namespace.cpp"
+#include "Module.cpp"
 #include "Main.cpp"

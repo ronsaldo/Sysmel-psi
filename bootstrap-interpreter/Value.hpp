@@ -23,7 +23,7 @@ typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
 class Value : public std::enable_shared_from_this<Value>
 {
 public:
-    virtual ValuePtr getType() const;
+    virtual ValuePtr getType();
     virtual ValuePtr getClass() const;
 
     virtual bool isType() const { return false; }

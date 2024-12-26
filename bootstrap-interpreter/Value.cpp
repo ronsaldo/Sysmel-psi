@@ -3,7 +3,7 @@
 
 namespace Sysmel
 {
-ValuePtr Value::getType() const
+ValuePtr Value::getType()
 {
     return GradualType::uniqueInstance();
 }
