@@ -38,4 +38,29 @@ GradualTypePtr GradualType::uniqueInstance()
     return singletonValue;
 }
 
+// BasicType
+ValuePtr BasicType::getType() const
+{
+    return TypeUniverse::uniqueInstanceForIndex(0);
+}
+
+// Unit type
+UnitTypePtr UnitType::singletonValue;
+UnitTypePtr UnitType::uniqueInstance()
+{
+    if(!singletonValue)
+        singletonValue = std::make_shared<UnitType> ();
+    return singletonValue;
+}
+
+// Bottom type
+BottomTypePtr BottomType::singletonValue;
+BottomTypePtr BottomType::uniqueInstance()
+{
+    if(!singletonValue)
+        singletonValue = std::make_shared<BottomType> ();
+    return singletonValue;
+}
+
+
 } //end of namespace Sysmel

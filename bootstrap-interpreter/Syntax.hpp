@@ -8,6 +8,7 @@
 #include "LargeInteger.hpp"
 #include "Scanner.hpp"
 #include "Semantics.hpp"
+#include "Type.hpp"
 #include <vector>
 #include <sstream>
 
@@ -58,8 +59,18 @@ public:
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
     {
-        (void)environment;
-        abort();
+        std::vector<ValuePtr> analyzedElements;
+        analyzedElements.reserve(elements.size());
+        for(auto &element : elements)
+        {
+            auto analyzedElement = element->analyzeInEnvironment(environment);
+            analyzedElements.push_back(analyzedElement);
+        }
+
+        auto analyzedSequence = std::make_shared<SemanticValueSequence> ();
+        analyzedSequence->type = elements.empty() ? UnitType::uniqueInstance() : analyzedElements.back()->getTypeOrClass();
+        analyzedSequence->elements.swap(analyzedElements);
+        return analyzedSequence;
     }
 
     std::vector<ValuePtr> elements;

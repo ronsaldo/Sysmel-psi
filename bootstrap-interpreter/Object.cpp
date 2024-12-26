@@ -10,6 +10,15 @@ ValuePtr ProtoObject::getClass() const
     return clazz;
 }
 
+UndefinedObjectPtr UndefinedObject::uniqueInstance()
+{
+    if(!singleton)
+        singleton = std::make_shared<UndefinedObject> ();
+    return singleton;
+}
+
+UndefinedObjectPtr UndefinedObject::singleton;
+
 SymbolPtr Symbol::internString(const std::string &string)
 {
     auto it = internedSymbols.find(string);
@@ -23,5 +32,10 @@ SymbolPtr Symbol::internString(const std::string &string)
 }
 
 std::map<std::string, SymbolPtr> Symbol::internedSymbols;
+
+ValuePtr PrimitiveMethod::applyWithArguments(const std::vector<ValuePtr> &arguments)
+{
+    return implementation(arguments);
+}
 
 } // End of namespace

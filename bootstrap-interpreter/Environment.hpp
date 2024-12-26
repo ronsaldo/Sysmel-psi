@@ -106,6 +106,11 @@ public:
 
 private:
     void buildIntrinsicsState();
+    void buildMetaHierarchy();
+    void buildPrimitives();
+
+    void addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
+    void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
 
     static IntrinsicsEnvironmentPtr singleton;
     std::map<std::string, ClassPtr> intrinsicClasses;

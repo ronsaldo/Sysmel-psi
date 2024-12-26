@@ -1,5 +1,6 @@
 #include "Syntax.hpp"
 #include "Environment.hpp"
+#include "Type.hpp"
 
 namespace Sysmel
 {
@@ -34,7 +35,7 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
     
     auto analyzedReceiver = receiver->analyzeInEnvironment(environment);
     auto receiverTypeOrClass = analyzedReceiver->getTypeOrClass();
-    
+
     std::vector<ValuePtr> analyzedArguments;
     analyzedArguments.reserve(arguments.size());
     for(auto argument : arguments)
@@ -42,6 +43,13 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
         analyzedArguments.push_back(argument->analyzeInEnvironment(environment));
     }
 
-    abort();
+    auto analyzedMessage = std::make_shared<SemanticMessageSend> ();
+    analyzedMessage->sourcePosition = sourcePosition;
+    analyzedMessage->type = GradualType::uniqueInstance();
+    analyzedMessage->receiver = analyzedReceiver;
+    analyzedMessage->selector = analyzedSelectorSymbol;
+    analyzedMessage->arguments.swap(analyzedArguments);
+
+    return analyzedMessage;
 }
 }

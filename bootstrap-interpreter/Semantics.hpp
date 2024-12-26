@@ -19,6 +19,41 @@ public:
     ValuePtr type;
 };
 
+class SemanticValueSequence : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticValueSequence(";
+        for(size_t i = 0; i < elements.size(); ++i)
+        {
+            if(i > 0)
+                out << ". ";
+            elements[i]->printStringOn(out);
+        }
+        out << ")";
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        for(auto &element : elements)
+        {
+            function(element);
+            element->traverseChildren(function);
+        }
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        ValuePtr result = UndefinedObject::uniqueInstance();
+        for(auto &element : elements)
+            result = element->evaluateInEnvironment(environment);
+        return result;
+    }
+
+    std::vector<ValuePtr> elements;
+};
+
 class SemanticMessageSend : public SemanticValue
 {
 public:
@@ -59,6 +94,20 @@ public:
         }
     }
 
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto receiverValue = receiver->evaluateInEnvironment(environment);
+        auto selectorValue = selector->evaluateInEnvironment(environment);
+        std::vector<ValuePtr> argumentValues;
+        argumentValues.reserve(arguments.size());
+        for (auto& arg: arguments)
+        {
+            argumentValues.push_back(arg->evaluateInEnvironment(environment));
+        }
+
+        return receiverValue->performWithArguments(selectorValue, argumentValues);
+    }
+
     ValuePtr receiver;
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
@@ -76,6 +125,12 @@ public:
     virtual SymbolPtr asAnalyzedSymbolValue() override 
     {
         return value->asAnalyzedSymbolValue(); 
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        return value;
     }
 
     ValuePtr value;

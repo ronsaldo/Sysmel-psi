@@ -4,15 +4,19 @@
 #include "Value.hpp"
 #include "LargeInteger.hpp"
 #include <map>
+#include <functional>
 
 namespace Sysmel
 {
 
 typedef std::shared_ptr<class ProtoObject> ProtoObjectPtr;
 typedef std::shared_ptr<class Object> ObjectPtr;
+typedef std::shared_ptr<class UndefinedObject> UndefinedObjectPtr;
 typedef std::shared_ptr<class Class> ClassPtr;
 typedef std::shared_ptr<class Metaclass> MetaclassPtr;
 typedef std::shared_ptr<class Symbol> SymbolPtr;
+
+typedef std::function<ValuePtr (const std::vector<ValuePtr> &arguments)> PrimitiveImplementationSignature;
 
 class ProtoObject : public Value
 {
@@ -45,13 +49,44 @@ class UndefinedObject : public Object
 {
 public:
     virtual const char *getClassName() const override {return "UndefinedObject";}
+
+    static UndefinedObjectPtr uniqueInstance();
+private:
+    static UndefinedObjectPtr singleton;
 };
 
 class Behavior : public Object
 {
 public:
     virtual const char *getClassName() const override {return "Behavior";}
+    
+    virtual ValuePtr performWithArgumentsOnInstance(const ValuePtr &receiver, const ValuePtr &selector, const std::vector<ValuePtr> &arguments) override
+    {
+        auto method = lookupSelector(selector);
+        if(!method)
+            throwExceptionWithMessage("Failed to find method.");
+        
+        std::vector<ValuePtr> allArguments;
+        allArguments.reserve(1 + arguments.size());
+        allArguments.push_back(receiver);
+        for(auto &arg : arguments)
+            allArguments.push_back(arg);
 
+        return method->applyWithArguments(allArguments);
+    }
+
+    virtual ValuePtr lookupSelector(const ValuePtr &selector) override
+    {
+        auto it = methodDict.find(selector);
+        if(it != methodDict.end())
+            it->second;
+        if(superclass)
+            return superclass->lookupSelector(selector);
+        return nullptr;
+    }
+
+    ValuePtr superclass;
+    std::map<ValuePtr, ValuePtr> methodDict;
 };
 
 class ClassDescription : public Behavior
@@ -80,6 +115,23 @@ public:
     virtual const char *getClassName() const override {return "Metaclass";}
 
     ClassWeakPtr thisClass;
+};
+
+class PrimitiveMethod : public Object
+{
+public:
+    PrimitiveMethod(PrimitiveImplementationSignature cimplementation)
+        : implementation(cimplementation) {}
+
+    virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments) override;
+
+    PrimitiveImplementationSignature implementation;
+};
+
+class CompiledMethod : public Object
+{
+public:
+    virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments) override;
 };
 
 class Magnitude : public Object

@@ -58,7 +58,7 @@ bool checkSyntaxErrors(ValuePtr parseTree)
 ValuePtr evaluateSourceCode(const SourceCodePtr &sourceCode)
 {
     auto tokens = scanSourceCode(sourceCode);
-    dumpTokens(tokens);
+    //dumpTokens(tokens);
     
     auto parseTree = parseTokens(sourceCode, tokens);
     //dumpParseTree(parseTree);

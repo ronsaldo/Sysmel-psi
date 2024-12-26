@@ -6,6 +6,9 @@ AddClassWithSuperclass(ClassDescription, Behavior)
 AddClassWithSuperclass(Class, ClassDescription)
 AddClassWithSuperclass(Metaclass, ClassDescription)
 
+AddClassWithSuperclass(PrimitiveMethod, Object)
+AddClassWithSuperclass(CompiledMethod, Object)
+
 AddClassWithSuperclass(Magnitude, Object)
 AddClassWithSuperclass(Character, Magnitude)
 AddClassWithSuperclass(Number, Magnitude)

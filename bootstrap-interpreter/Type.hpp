@@ -16,9 +16,21 @@ typedef std::shared_ptr<class ProductType> ProductTypePtr;
 typedef std::shared_ptr<class SumType> SumTypePtr;
 typedef std::shared_ptr<class FunctionType> FunctionTypePtr;
 typedef std::shared_ptr<class ObjectType> ObjectTypePtr;
+typedef std::shared_ptr<class Symbol> SymbolPtr;
 
+class TypeBehavior : public Value
+{
+public:
+    virtual ValuePtr lookupSelector(const ValuePtr &selector) override
+    {
+        auto it = methodDict.find(selector);
+        return it != methodDict.end() ? it->second : nullptr;
+    }
 
-class TypeUniverse : public Value
+    std::map<ValuePtr, ValuePtr> methodDict;
+};
+
+class TypeUniverse : public TypeBehavior
 {
 public:
     TypeUniverse(int index = 0)
@@ -41,7 +53,7 @@ private:
     static std::vector<TypeUniversePtr> uniqueInstances;
 };
 
-class Type : public Value
+class Type : public TypeBehavior
 {
 public:
     virtual bool isType() const override { return true; }
@@ -55,9 +67,10 @@ public:
     static TypePtr uniqueInstance();
 };
 
-class BasicType : public Value
+class BasicType : public TypeBehavior
 {
 public:
+    virtual ValuePtr getType() const override;
 
 };
 
@@ -82,9 +95,9 @@ public:
         out << "Bottom";
     }
 
-    static UnitTypePtr uniqueInstance();
+    static BottomTypePtr uniqueInstance();
 private:
-    static UnitTypePtr singletonValue;
+    static BottomTypePtr singletonValue;
 };
 
 class GradualType : public BasicType

@@ -30,6 +30,12 @@ template<typename BaseClass> std::pair<ClassPtr, MetaclassPtr> makeClassAndMetac
 
 void IntrinsicsEnvironment::buildIntrinsicsState()
 {
+    buildMetaHierarchy();
+    buildPrimitives();
+}
+
+void IntrinsicsEnvironment::buildMetaHierarchy()
+{
     parent = std::make_shared<EmptyEnvironment> ();
 
     std::vector<std::pair<ClassPtr, MetaclassPtr> > intrinsicClassesAndMetaclasses{
@@ -47,7 +53,64 @@ void IntrinsicsEnvironment::buildIntrinsicsState()
         intrinsicClasses[pair.first->name] = pair.first;
         intrinsicMetaclasses[pair.first->name] = pair.second;
     }
-    
+
+    for (auto &pair : intrinsicClassesAndMetaclasses)
+    {
+        addLocalSymbolBinding(Symbol::internString(pair.first->name), pair.second);
+    }
+
+    // Connect the superclasses
+#define AddClass(cls)
+#define AddClassWithSuperclass(cls, super) \
+    intrinsicClasses[#cls]->superclass     =  intrinsicClasses[#super]; \
+    intrinsicMetaclasses[#cls]->superclass =  intrinsicMetaclasses[#super];
+
+#include "IntrinsicClasses.inc"
+
+#undef AddClass
+#undef AddClassWithSuperclass
+
+    // Metaclasses are instances of Metaclass
+    auto MetaclassObj = intrinsicClasses["Metaclass"];
+#define AddClass(cls) \
+    intrinsicMetaclasses[#cls]->clazz = MetaclassObj;
+#define AddClassWithSuperclass(cls, super) \
+    intrinsicMetaclasses[#cls]->clazz = MetaclassObj;
+
+#include "IntrinsicClasses.inc"
+
+#undef AddClass
+#undef AddClassWithSuperclass
+
+    // Meta hiearchy short-circuit.
+    intrinsicMetaclasses["ProtoObject"]->superclass = intrinsicClasses["Class"];
+}
+
+void IntrinsicsEnvironment::buildPrimitives()
+{
+    addPrimitiveToClass("Integer", "+", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+
+        auto result = std::make_shared<Integer> ();
+        result->value = left->value + right->value;
+        return result;
+    });
+}
+
+void IntrinsicsEnvironment::addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature impl)
+{
+    auto primitive = std::make_shared<PrimitiveMethod> (impl);
+    auto &clazz = intrinsicClasses[className];
+    clazz->methodDict[Symbol::internString(selector)] = primitive;
+}
+
+void IntrinsicsEnvironment::addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature impl)
+{
+    auto primitive = std::make_shared<PrimitiveMethod> (impl);
+    auto &clazz = intrinsicClasses[className];
+    clazz->methodDict[Symbol::internString(selector)] = primitive;
 }
 
 IntrinsicsEnvironmentPtr IntrinsicsEnvironment::uniqueInstance()
