@@ -2,22 +2,91 @@
 #define SYSMEL_OBJECT_HPP
 
 #include "Value.hpp"
+#include "LargeInteger.hpp"
 
 namespace Sysmel
 {
 
-class Object : public Value
+class ProtoObject : public Value
 {
 public:
-    virtual std::string printString() const {return "an Object";}
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "a ";
+        getClass()->printStringOn(out);
+    }
+
+    virtual ValuePtr getClass() const override;
+
+    ClassPtr clazz;
+    size_t identityHash;
 };
 
-class Class : public Object
+class Object : public ProtoObject
 {
 public:
-    virtual std::string printString() const {return name;}
+};
+
+class Behavior : public Object
+{
+public:
+
+};
+
+class ClassDescription : public Behavior
+{
+public:
+
+};
+
+class Class : public ClassDescription
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << name;
+    }
 
     std::string name;
+};
+
+class Metaclass : public ClassDescription
+{
+public:
+    ClassPtr thisClass;
+};
+
+class String : public Object
+{
+public:
+    std::string data;
+};
+
+class Magnitude : public Object
+{
+public:
+};
+
+class Character : public Magnitude
+{
+public:
+};
+
+class Number : public Magnitude
+{
+public:
+};
+
+class Integer : public Number
+{
+public:
+    LargeInteger value;
+};
+
+class Float : public Number
+{
+public:
+    double value;
 };
 
 } // End of namespace Sysmel

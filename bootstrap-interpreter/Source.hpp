@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string>
 #include <memory>
+#include <ostream>
 
 namespace Sysmel
 {
@@ -37,6 +38,13 @@ struct SourcePosition : public Object
     std::string getValue() const
     {
         return sourceCode->text.substr(startIndex, endIndex - startIndex);
+    }
+
+    void formatIn(std::ostream &out)
+    {
+        out << sourceCode->directory << sourceCode->name
+            << ':' << startLine << '.' << startColumn
+            << '-' << startLine << '.' << endColumn;
     }
 
     SourcePositionPtr until(const SourcePositionPtr &endSourcePosition) const

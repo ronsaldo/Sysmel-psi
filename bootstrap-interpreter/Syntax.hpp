@@ -6,6 +6,7 @@
 #include "Object.hpp"
 #include "Source.hpp"
 #include "LargeInteger.hpp"
+#include "Scanner.hpp"
 #include <vector>
 #include <sstream>
 
@@ -16,7 +17,7 @@ class SyntacticValue : public Object
 {
 public:
     virtual bool isSyntacticValue() const override {return true;}
-    virtual std::string printString() const override {return "SyntacticValue";}
+    virtual void printStringOn(std::ostream &out) const override {out << "SyntacticValue";}
     virtual SourcePositionPtr getSourcePosition() const override {return sourcePosition;}
 
     SourcePositionPtr sourcePosition;
@@ -25,18 +26,16 @@ public:
 class SyntaxValueSequence : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxValueSequence(";
         for(size_t i = 0; i < elements.size(); ++i)
         {
             if(i > 0)
                 out << ". ";
-            out << elements[i]->printString();
+            elements[i]->printStringOn(out);
         }
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -54,11 +53,15 @@ public:
 class SyntaxAssociation : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
-        out << "SyntaxAssociation(" << key->printString() << " : " << value->printString() << ")";
-        return out.str();
+        out << "SyntaxAssociation(";
+        if(key)
+            key->printStringOn(out);
+        out << " : ";
+        if(value)
+            value->printStringOn(out);
+        out << ")";
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -83,21 +86,19 @@ public:
 class SyntaxBindableName : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxBindableName(";
         if(typeExpression)
-            out << typeExpression->printString();
+            typeExpression->printStringOn(out);
         if(nameExpression)
         {
             if(typeExpression)
                 out << ", "; 
-            out << nameExpression->printString();
+            nameExpression->printStringOn(out);
         }
 
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -127,9 +128,8 @@ public:
 class SyntaxDictionary : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxDictionary(";
         bool isFirst = true;
         for (auto &element : elements)
@@ -138,10 +138,9 @@ public:
                 isFirst = false;
             else
                 out << ". ";
-            out << element->printString();
+            element->printStringOn(out);
         }
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -159,18 +158,16 @@ public:
 class SyntaxTuple : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxTuple(";
         for(size_t i = 0; i < elements.size(); ++i)
         {
             if(i > 0)
                 out << ". ";
-            out << elements[i]->printString();
+            elements[i]->printStringOn(out);
         }
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -194,14 +191,15 @@ public:
         return true;
     }
     
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxError(" << errorMessage;
         if (innerNode)
-            out << ": " << innerNode->printString();
+        {
+            out << ": ";
+             innerNode->printStringOn(out);
+        }
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -220,11 +218,9 @@ public:
 class SyntaxIdentifierReference : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxIdentifierReference(" << value << ")";
-        return out.str();
     }
 
     std::string value;    
@@ -233,15 +229,13 @@ public:
 class SyntaxFunctionalDependentType : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxFunctionalDependentType(";
         if (argumentPattern)
             out << argumentPattern->printString();
         if (resultType)
             out << " :: " <<  resultType->printString();
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -267,11 +261,13 @@ typedef std::shared_ptr<SyntaxFunctionalDependentType> SyntaxFunctionalDependent
 class SyntaxAssignment : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
-        out << "SyntaxAssignment(" << store->printString() << " := " << value->printString() << ")";
-        return out.str();
+        out << "SyntaxAssignment(";
+        store->printStringOn(out);
+        out << " := ";
+        value->printStringOn(out);
+        out << ")";
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -317,14 +313,12 @@ public:
 class SyntaxBlock : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxBlock(";
         if(functionType)
             out << functionType->printString() << ", ";
         out << body->printString() << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -348,14 +342,12 @@ public:
 class SyntaxLexicalBlock : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxLexicalBlock(";
         if(body)
             out << body->printString();
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -378,11 +370,9 @@ public:
 class SyntaxLiteralFloat : public SyntaxLiteral
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxLiteralFloat(" << value << ")";
-        return out.str();
     }
 
     double value;
@@ -391,11 +381,9 @@ public:
 class SyntaxLiteralInteger : public SyntaxLiteral
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxLiteralInteger(" << value << ")";
-        return out.str();
     }
 
     LargeInteger value;    
@@ -404,11 +392,9 @@ public:
 class SyntaxLiteralCharacter : public SyntaxLiteral
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxLiteralCharacter(" << value << ")";
-        return out.str();
     }
 
     char32_t value;
@@ -417,11 +403,9 @@ public:
 class SyntaxLiteralString : public SyntaxLiteral
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxLiteralString(" << value << ")";
-        return out.str();
     }
 
     std::string value;    
@@ -430,11 +414,9 @@ public:
 class SyntaxLiteralSymbol : public SyntaxLiteral
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxLiteralSymbol(" << value << ")";
-        return out.str();
     }
 
     std::string value;    
@@ -443,9 +425,8 @@ public:
 class SyntaxBinaryExpressionSequence : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxBinaryExpressionSequence(";
         bool isFirst = true;
         for(auto &element : elements)
@@ -454,10 +435,9 @@ public:
                 isFirst = false;
             else
                 out << ", ";
-            out << element->printString();
+            element->printStringOn(out);
         }
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -475,18 +455,17 @@ public:
 class SyntaxMessageCascade : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxMessageCascade(";
         if(receiver)
             out << receiver->printString() << ",";
         for(auto &message : messages)
         {
-            out << ", " << message->printString();
+            out << ", ";
+            message->printStringOn(out);
         }
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -510,17 +489,16 @@ public:
 class SyntaxMessageCascadeMessage : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxMessageCascadeMessage(";
-        out << selector->printString();
+        selector->printStringOn(out);
         for(auto &argument : arguments)
         {
-            out << ", " << argument->printString();
+            out << ", ";
+            argument->printStringOn(out);
         }
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -544,16 +522,16 @@ public:
 class SyntaxApplication : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
-        out << "SyntaxApplication(" << functional->printString();
+        out << "SyntaxApplication(";
+        functional->printStringOn(out);
         for(auto &argument : arguments)
         {
-            out << ", " << argument->printString();
+            out << ", ";
+            argument->printStringOn(out);
         }
         out << ")";
-        return out.str();
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -580,19 +558,22 @@ typedef std::shared_ptr<SyntaxMessageCascade> SyntaxMessageCascadePtr;
 class SyntaxMessageSend : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
         out << "SyntaxMessageSend(";
         if(receiver)
-            out << receiver->printString() << ",";
-        out << selector->printString();
+        {
+            receiver->printStringOn(out);
+            out << ",";
+        }
+            
+        selector->printStringOn(out);
         for(auto &argument : arguments)
         {
-            out << ", " << argument->printString();
+            out << ", ";
+            argument->printStringOn(out);
         }
         out << ")";
-        return out.str();
     }
 
     virtual SyntaxMessageCascadePtr asMessageCascade() const override
@@ -638,11 +619,11 @@ public:
 class SyntaxQuote : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
-        out << "SyntaxQuote(" << value->printString() << ")";
-        return out.str();
+        out << "SyntaxQuote(";
+        value->printStringOn(out);
+        out << ")";
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -660,11 +641,11 @@ public:
 class SyntaxQuasiQuote : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
-        out << "SyntaxQuasiQuote(" << value->printString() << ")";
-        return out.str();
+        out << "SyntaxQuasiQuote(";
+        value->printStringOn(out);
+        out << ")";
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -682,11 +663,11 @@ public:
 class SyntaxQuasiUnquote : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
-        out << "SyntaxQuasiUnquote(" << value->printString() << ")";
-        return out.str();
+        out << "SyntaxQuasiUnquote(";
+        value->printStringOn(out);
+        out << ")";
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
@@ -704,11 +685,11 @@ public:
 class SyntaxSplice : public SyntacticValue
 {
 public:
-    virtual std::string printString() const override
+    virtual void printStringOn(std::ostream &out) const override
     {
-        std::ostringstream out;
-        out << "SyntaxSplice(" << value->printString() << ")";
-        return out.str();
+        out << "SyntaxSplice(";
+        value->printStringOn(out);
+        out << ")";
     }
 
     virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
