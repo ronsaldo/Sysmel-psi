@@ -15,8 +15,11 @@ namespace Sysmel
 
 typedef std::shared_ptr<class Value> ValuePtr;
 typedef std::shared_ptr<class Class> ClassPtr;
+typedef std::weak_ptr<class Class> ClassWeakPtr;
 typedef std::shared_ptr<class Type> TypePtr;
 typedef std::shared_ptr<class Object> ObjectPtr;
+typedef std::shared_ptr<class Symbol> SymbolPtr;
+typedef std::shared_ptr<class Environment> EnvironmentPtr;
 typedef std::shared_ptr<class SyntacticValue> SyntacticValuePtr;
 typedef std::shared_ptr<class SourcePosition> SourcePositionPtr; 
 typedef std::shared_ptr<class SyntaxError> SyntaxErrorPtr; 
@@ -27,6 +30,7 @@ class Value : public std::enable_shared_from_this<Value>
 public:
     virtual ValuePtr getType() const;
     virtual ValuePtr getClass() const;
+    virtual ValuePtr getTypeOrClass() const;
 
     virtual ValuePtr performWithArguments(const ValuePtr &selector, const std::vector<ValuePtr> &arguments);
     virtual ValuePtr performWithArgumentsOnInstance(const ValuePtr &receiver, const ValuePtr &selector, const std::vector<ValuePtr> &arguments);
@@ -35,10 +39,19 @@ public:
 
     virtual bool isType() const { return false; }
     virtual bool isClass() const { return false; }
+    virtual bool isTypeOrClass() const { return isType() || isClass(); }
+
     virtual bool isObject() const { return false; }
     virtual bool isEnvironment() const { return false; }
+    virtual bool isSemanticValue() const { return false; }
     virtual bool isSyntacticValue() const { return false; }
     virtual bool isSyntaxError() const { return false; }
+
+    virtual SymbolPtr asAnalyzedSymbolValue() { return nullptr; } 
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment);
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment);
+    virtual ValuePtr analyzeAndEvaluateInEnvironment(const EnvironmentPtr &environment);
 
     virtual void printStringOn(std::ostream &out) const
     {

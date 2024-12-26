@@ -9,4 +9,5 @@
 #include "Environment.cpp"
 #include "Namespace.cpp"
 #include "Module.cpp"
+#include "Semantics.cpp"
 #include "Main.cpp"

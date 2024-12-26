@@ -63,7 +63,9 @@
         "__functional_base": "cpp",
         "__memory": "cpp",
         "iostream": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "map": "cpp",
+        "__config": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

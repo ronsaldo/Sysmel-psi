@@ -1,12 +1,15 @@
 #include "Scanner.hpp"
 #include "Parser.hpp"
 #include "Syntax.hpp"
+#include "Module.hpp"
 #include <stdio.h>
 #include <string.h>
 #include <vector>
 #include <string>
 
 using namespace Sysmel;
+
+ModulePtr currentModule;
 
 void printHelp()
 {
@@ -61,7 +64,10 @@ ValuePtr evaluateSourceCode(const SourceCodePtr &sourceCode)
     //dumpParseTree(parseTree);
     if(checkSyntaxErrors(parseTree))
         return nullptr;
-    return parseTree;
+
+    auto lexicalEnvironment = currentModule->newLexicalEnvironment(parseTree->getSourcePosition());
+    auto result = parseTree->analyzeAndEvaluateInEnvironment(lexicalEnvironment);
+    return result;
 }
 
 bool evaluateAndPrintString(const std::string &sourceText)
@@ -83,6 +89,9 @@ bool evaluateAndPrintString(const std::string &sourceText)
 int main(int argc, const char **argv)
 {
     std::vector<std::string> inputFileNames;
+
+    currentModule = std::make_shared<Module> ();
+    currentModule->initializeWithName("cli");
 
     for(int i = 1; i < argc; ++i)
     {

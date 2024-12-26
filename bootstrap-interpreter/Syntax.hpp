@@ -7,11 +7,14 @@
 #include "Source.hpp"
 #include "LargeInteger.hpp"
 #include "Scanner.hpp"
+#include "Semantics.hpp"
 #include <vector>
 #include <sstream>
 
 namespace Sysmel
 {
+
+typedef std::shared_ptr<class SyntaxMessageSend> SyntaxMessageSendPtr;
 
 class SyntacticValue : public Object
 {
@@ -19,6 +22,12 @@ public:
     virtual bool isSyntacticValue() const override {return true;}
     virtual void printStringOn(std::ostream &out) const override {out << "SyntacticValue";}
     virtual SourcePositionPtr getSourcePosition() const override {return sourcePosition;}
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment)
+    {
+        (void)environment;
+        abort();
+    }
 
     SourcePositionPtr sourcePosition;
 };
@@ -45,6 +54,12 @@ public:
             function(element);
             element->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     std::vector<ValuePtr> elements;
@@ -77,6 +92,12 @@ public:
             function(value);
             value->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     ValuePtr key;
@@ -116,6 +137,12 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     ValuePtr typeExpression;
     ValuePtr nameExpression;
     bool isImplicit = false;
@@ -152,6 +179,12 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     std::vector<ValuePtr> elements;
 };
 
@@ -177,6 +210,12 @@ public:
             function(element);
             element->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     std::vector<ValuePtr> elements;
@@ -211,6 +250,13 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
+
     std::string errorMessage;
     ValuePtr innerNode;
 };
@@ -221,6 +267,12 @@ public:
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SyntaxIdentifierReference(" << value << ")";
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     std::string value;    
@@ -250,6 +302,12 @@ public:
             function(resultType);
             resultType->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     ValuePtr argumentPattern;
@@ -284,6 +342,12 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     ValuePtr store;
     ValuePtr value;
 };
@@ -304,6 +368,12 @@ public:
             function(value);
             value->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     ValuePtr pattern;
@@ -335,6 +405,12 @@ public:
         }
     }
 
+    ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     ValuePtr functionType;
     ValuePtr body;
 };
@@ -359,6 +435,12 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     ValuePtr body;
 };
 
@@ -375,6 +457,12 @@ public:
         out << "SyntaxLiteralFloat(" << value << ")";
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     double value;
 };
 
@@ -384,6 +472,20 @@ public:
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SyntaxLiteralInteger(" << value << ")";
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment)
+    {
+        (void)environment;
+        auto integer = std::make_shared<Integer> ();
+        integer->clazz = IntrinsicsEnvironment::uniqueInstance()->lookupValidClass("Integer");
+        integer->value = value;
+
+        auto semanticLiteral = std::make_shared<SemanticLiteralValue> ();
+        semanticLiteral->sourcePosition = sourcePosition;
+        semanticLiteral->type = integer->clazz;
+        semanticLiteral->value = integer;
+        return semanticLiteral;
     }
 
     LargeInteger value;    
@@ -397,6 +499,20 @@ public:
         out << "SyntaxLiteralCharacter(" << value << ")";
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment)
+    {
+        (void)environment;
+        auto character = std::make_shared<Character> ();
+        character->clazz = IntrinsicsEnvironment::uniqueInstance()->lookupValidClass("Character");
+        character->value = value;
+
+        auto semanticLiteral = std::make_shared<SemanticLiteralValue> ();
+        semanticLiteral->sourcePosition = sourcePosition;
+        semanticLiteral->type = character->clazz;
+        semanticLiteral->value = character;
+        return semanticLiteral;
+    }
+
     char32_t value;
 };
 
@@ -408,6 +524,12 @@ public:
         out << "SyntaxLiteralString(" << value << ")";
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     std::string value;    
 };
 
@@ -417,6 +539,17 @@ public:
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SyntaxLiteralSymbol(" << value << ")";
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment)
+    {
+        (void)environment;
+        auto symbol = Symbol::internString(value);
+        auto semanticLiteral = std::make_shared<SemanticLiteralValue> ();
+        semanticLiteral->sourcePosition = sourcePosition;
+        semanticLiteral->type = symbol->clazz;
+        semanticLiteral->value = symbol;
+        return semanticLiteral;
     }
 
     std::string value;    
@@ -449,6 +582,8 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override;
+
     std::vector<ValuePtr> elements;
 };
 
@@ -480,6 +615,12 @@ public:
             function(element);
             element->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     ValuePtr receiver;
@@ -515,6 +656,12 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
 };
@@ -546,6 +693,12 @@ public:
             function(argument);
             argument->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     ValuePtr functional;
@@ -609,6 +762,8 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override;
+
     ValuePtr receiver;
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
@@ -635,12 +790,19 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     ValuePtr value;
 };
 
 class SyntaxQuasiQuote : public SyntacticValue
 {
 public:
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SyntaxQuasiQuote(";
@@ -655,6 +817,12 @@ public:
             function(value);
             value->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     ValuePtr value;
@@ -679,6 +847,12 @@ public:
         }
     }
 
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
+    }
+
     ValuePtr value;
 };
 
@@ -699,6 +873,12 @@ public:
             function(value);
             value->traverseChildren(function);
         }
+    }
+
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        abort();
     }
 
     ValuePtr value;

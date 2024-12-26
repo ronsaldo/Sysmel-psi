@@ -10,6 +10,11 @@ namespace Sysmel
         return GradualType::uniqueInstance();
     }
 
+    ValuePtr Value::getTypeOrClass() const
+    {
+        return getType();
+    }
+
     ValuePtr Value::performWithArguments(const ValuePtr &selector, const std::vector<ValuePtr> &arguments)
     {
         auto typeOrClass = getType();
@@ -56,6 +61,23 @@ namespace Sysmel
         {
             throw std::runtime_error(message);
         }
+    }
+
+    ValuePtr Value::analyzeInEnvironment(const EnvironmentPtr &environment)
+    {
+        (void)environment;
+        return shared_from_this();
+    }
+    
+    ValuePtr Value::evaluateInEnvironment(const EnvironmentPtr &environment)
+    {
+        (void)environment;
+        return shared_from_this();
+    }
+
+    ValuePtr Value::analyzeAndEvaluateInEnvironment(const EnvironmentPtr &environment)
+    {
+        return analyzeInEnvironment(environment)->evaluateInEnvironment(environment);
     }
 
     ValuePtr Value::getClass() const
