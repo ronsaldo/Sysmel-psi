@@ -2,6 +2,8 @@
 #include "LargeInteger.cpp"
 #include "Scanner.cpp"
 #include "Value.cpp"
+#include "Type.cpp"
+#include "Object.cpp"
 #include "Syntax.cpp"
 #include "Parser.cpp"
 #include "Main.cpp"

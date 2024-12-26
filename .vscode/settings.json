@@ -61,7 +61,9 @@
         "sstream": "cpp",
         "__bit_reference": "cpp",
         "__functional_base": "cpp",
-        "__memory": "cpp"
+        "__memory": "cpp",
+        "iostream": "cpp",
+        "cinttypes": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

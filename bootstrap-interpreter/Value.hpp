@@ -12,6 +12,7 @@ namespace Sysmel
 {
 
 typedef std::shared_ptr<class Value> ValuePtr;
+typedef std::shared_ptr<class Class> ClassPtr;
 typedef std::shared_ptr<class Type> TypePtr;
 typedef std::shared_ptr<class Object> ObjectPtr;
 typedef std::shared_ptr<class SyntacticValue> SyntacticValuePtr;
@@ -22,7 +23,11 @@ typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
 class Value : public std::enable_shared_from_this<Value>
 {
 public:
+    virtual ValuePtr getType() const;
+    virtual ValuePtr getClass() const;
+
     virtual bool isType() const { return false; }
+    virtual bool isClass() const { return false; }
     virtual bool isObject() const { return false; }
     virtual bool isSyntacticValue() const { return false; }
     virtual bool isSyntaxError() const { return false; }
@@ -51,17 +56,7 @@ public:
     }
 };
 
-class Type : public Value
-{
-public:
-    virtual std::string printString() const {return "a Type";}
-};
 
-class Object : public Value
-{
-public:
-    virtual std::string printString() const {return "an Object";}
-};
 
 
 }

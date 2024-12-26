@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Value.hpp"
+#include "Object.hpp"
 
 #include <stdint.h>
 #include <string>
