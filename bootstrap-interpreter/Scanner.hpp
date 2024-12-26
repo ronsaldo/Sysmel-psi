@@ -1,8 +1,8 @@
 #ifndef SYSMEL_BOOTSTRAP_SCANNER
 #define SYSMEL_BOOTSTRAP_SCANNER
 
-#include "source.hpp"
-#include "value.hpp"
+#include "Source.hpp"
+#include "Value.hpp"
 #include <vector>
 #include <string>
 
@@ -16,7 +16,7 @@ namespace Sysmel
 enum class TokenKind
 {
 #define TokenKindName(name) name,
-#include "token_kind.inc"
+#include "TokenKind.inc"
 #undef TokenKindName
 };
 

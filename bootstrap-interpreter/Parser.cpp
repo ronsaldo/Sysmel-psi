@@ -1,5 +1,5 @@
-#include "parser.hpp"
-#include "syntax.hpp"
+#include "Parser.hpp"
+#include "Syntax.hpp"
 #include <assert.h>
 
 namespace Sysmel
@@ -153,10 +153,10 @@ namespace Sysmel
     ValuePtr parseDictionary(ParserState &state);
     ValuePtr parseExpression(ParserState &state);
 
-    int64_t parseIntegerConstant(const std::string &constant)
+    LargeInteger parseIntegerConstant(const std::string &constant)
     {
-        int64_t result = 0;
-        int64_t radix = 10;
+        LargeInteger result = LargeInteger::Zero;
+        LargeInteger radix = LargeInteger::Ten;
         bool hasSeenRadix = false;
         for (size_t i = 0; i < constant.size(); ++i)
         {
@@ -165,16 +165,16 @@ namespace Sysmel
             {
                 hasSeenRadix = true;
                 radix = result;
-                result = 0;
+                result = LargeInteger::Zero;
             }
             else
             {
                 if ('0' <= c && c <= '9')
-                    result = result * radix + c - '0';
+                    result = result * radix + LargeInteger(c - '0');
                 else if ('A' <= c && c <= 'Z')
-                    result = result * radix + c - 'A' + 10;
+                    result = result * radix + LargeInteger(c - 'A' + 10);
                 else if ('a' <= c && c <= 'z')
-                    result = result * radix + c - 'a' + 10;
+                    result = result * radix + LargeInteger(c - 'a' + 10);
             }
         }
         return result;

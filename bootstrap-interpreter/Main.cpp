@@ -1,6 +1,6 @@
-#include "scanner.hpp"
-#include "parser.hpp"
-#include "syntax.hpp"
+#include "Scanner.hpp"
+#include "Parser.hpp"
+#include "Syntax.hpp"
 #include <stdio.h>
 #include <string.h>
 #include <vector>

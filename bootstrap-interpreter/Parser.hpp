@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "scanner.hpp"
+#include "Scanner.hpp"
 
 namespace Sysmel
 {

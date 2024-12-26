@@ -1,4 +1,4 @@
-#include "scanner.hpp"
+#include "Scanner.hpp"
 #include <assert.h>
 
 namespace Sysmel
@@ -6,7 +6,7 @@ namespace Sysmel
 
 const char *TokenKindNames[] = {
 #define TokenKindName(name) #name ,
-#include "token_kind.inc"
+#include "TokenKind.inc"
 #undef TokenKindName
 };
 

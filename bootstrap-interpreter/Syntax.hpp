@@ -3,8 +3,9 @@
 
 #pragma once
 
-#include "value.hpp"
-#include "source.hpp"
+#include "Value.hpp"
+#include "Source.hpp"
+#include "LargeInteger.hpp"
 #include <vector>
 #include <sstream>
 
@@ -397,7 +398,7 @@ public:
         return out.str();
     }
 
-    int64_t value;    
+    LargeInteger value;    
 };
 
 class SyntaxLiteralCharacter : public SyntaxLiteral
