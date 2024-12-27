@@ -62,9 +62,11 @@ public:
     
     virtual ValuePtr performWithArgumentsOnInstance(const ValuePtr &receiver, const ValuePtr &selector, const std::vector<ValuePtr> &arguments) override
     {
-        auto method = lookupSelector(selector);
+        auto method = receiver->getClass()->lookupSelector(selector);
         if(!method)
-            throwExceptionWithMessage("Failed to find method.");
+        {
+            throwExceptionWithMessage(("Failed to find method " + selector->printString() + " in " + receiver->getClass()->printString()).c_str());
+        }
         
         std::vector<ValuePtr> allArguments;
         allArguments.reserve(1 + arguments.size());
@@ -77,16 +79,16 @@ public:
 
     virtual ValuePtr lookupSelector(const ValuePtr &selector) override
     {
-        auto it = methodDict.find(selector);
+        auto it = methodDict.find(std::static_pointer_cast<Symbol> (selector));
         if(it != methodDict.end())
-            it->second;
+            return it->second;
         if(superclass)
             return superclass->lookupSelector(selector);
         return nullptr;
     }
 
     ValuePtr superclass;
-    std::map<ValuePtr, ValuePtr> methodDict;
+    std::map<SymbolPtr, ValuePtr> methodDict;
 };
 
 class ClassDescription : public Behavior
@@ -123,6 +125,7 @@ public:
     PrimitiveMethod(PrimitiveImplementationSignature cimplementation)
         : implementation(cimplementation) {}
 
+    virtual const char *getClassName() const override {return "PrimitiveMethod";}
     virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments) override;
 
     PrimitiveImplementationSignature implementation;
@@ -131,6 +134,7 @@ public:
 class CompiledMethod : public Object
 {
 public:
+    virtual const char *getClassName() const override {return "CompiledMethod";}
     virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments) override;
 };
 

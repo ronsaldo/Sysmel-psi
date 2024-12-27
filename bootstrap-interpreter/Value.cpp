@@ -17,11 +17,12 @@ namespace Sysmel
 
     ValuePtr Value::performWithArguments(const ValuePtr &selector, const std::vector<ValuePtr> &arguments)
     {
-        auto typeOrClass = getType();
+        auto typeOrClass = getClass();
         if (!typeOrClass)
         {
-            typeOrClass = getClass();
-            throwExceptionWithMessage("Cannot send a message to something without a type or a class.");
+            typeOrClass = getType();
+            if(!typeOrClass)
+                throwExceptionWithMessage("Cannot send a message to something without a type or a class.");
         }
 
         return typeOrClass->performWithArgumentsOnInstance(shared_from_this(), selector, arguments);

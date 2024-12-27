@@ -28,6 +28,7 @@ SymbolPtr Symbol::internString(const std::string &string)
     auto newSymbol = std::make_shared<Symbol> ();
     newSymbol->clazz = IntrinsicsEnvironment::uniqueInstance()->lookupValidClass("Symbol");
     newSymbol->value = string;
+    internedSymbols.insert(std::make_pair(string, newSymbol));
     return newSymbol;
 }
 

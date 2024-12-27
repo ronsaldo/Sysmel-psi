@@ -65,7 +65,9 @@
         "iostream": "cpp",
         "cinttypes": "cpp",
         "map": "cpp",
-        "__config": "cpp"
+        "__config": "cpp",
+        "version": "cpp",
+        "__locale": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

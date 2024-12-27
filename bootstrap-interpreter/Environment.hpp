@@ -106,8 +106,10 @@ public:
 
 private:
     void buildIntrinsicsState();
+    void buildBasicTypes();
     void buildMetaHierarchy();
-    void buildPrimitives();
+    void buildObjectPrimitives();
+    void buildValuePrimitives();
 
     void addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
     void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);

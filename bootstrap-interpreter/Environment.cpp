@@ -30,8 +30,14 @@ template<typename BaseClass> std::pair<ClassPtr, MetaclassPtr> makeClassAndMetac
 
 void IntrinsicsEnvironment::buildIntrinsicsState()
 {
+    buildBasicTypes();
     buildMetaHierarchy();
-    buildPrimitives();
+    buildObjectPrimitives();
+    buildValuePrimitives();
+}
+
+void IntrinsicsEnvironment::buildBasicTypes()
+{
 }
 
 void IntrinsicsEnvironment::buildMetaHierarchy()
@@ -86,8 +92,29 @@ void IntrinsicsEnvironment::buildMetaHierarchy()
     intrinsicMetaclasses["ProtoObject"]->superclass = intrinsicClasses["Class"];
 }
 
-void IntrinsicsEnvironment::buildPrimitives()
+void IntrinsicsEnvironment::buildObjectPrimitives()
 {
+    // ProtoObject
+    addPrimitiveToClass("ProtoObject", "class", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 1);
+        auto self = std::static_pointer_cast<ProtoObject> (arguments[0]);
+        return self->clazz;
+    });
+    addPrimitiveToClass("ProtoObject", "identityHash", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 1);
+        auto self = std::static_pointer_cast<ProtoObject> (arguments[0]);
+        auto result = std::make_shared<Integer> ();
+        result->value = LargeInteger(self->identityHash);
+        return result;
+    });
+
+    // Object
+    addPrimitiveToClass("Object", "yourself", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 1);
+        return arguments[0];
+    });
+
+    // Integer
     addPrimitiveToClass("Integer", "+", [](const std::vector<ValuePtr> &arguments){
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
@@ -97,6 +124,28 @@ void IntrinsicsEnvironment::buildPrimitives()
         result->value = left->value + right->value;
         return result;
     });
+    addPrimitiveToClass("Integer", "-", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+
+        auto result = std::make_shared<Integer> ();
+        result->value = left->value - right->value;
+        return result;
+    });
+    addPrimitiveToClass("Integer", "*", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+
+        auto result = std::make_shared<Integer> ();
+        result->value = left->value * right->value;
+        return result;
+    });
+}
+
+void IntrinsicsEnvironment::buildValuePrimitives()
+{
 }
 
 void IntrinsicsEnvironment::addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature impl)
