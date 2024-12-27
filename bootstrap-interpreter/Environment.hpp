@@ -8,176 +8,173 @@
 
 namespace Sysmel
 {
-typedef std::shared_ptr<Environment> EnvironmentPtr;
-typedef std::shared_ptr<class IntrinsicsEnvironment> IntrinsicsEnvironmentPtr;
-typedef std::shared_ptr<class LexicalEnvironment> LexicalEnvironmentPtr;
-typedef std::shared_ptr<class Module> ModulePtr;
-typedef std::shared_ptr<class Namespace> NamespacePtr;
+    typedef std::shared_ptr<Environment> EnvironmentPtr;
+    typedef std::shared_ptr<class IntrinsicsEnvironment> IntrinsicsEnvironmentPtr;
+    typedef std::shared_ptr<class LexicalEnvironment> LexicalEnvironmentPtr;
+    typedef std::shared_ptr<class Module> ModulePtr;
+    typedef std::shared_ptr<class Namespace> NamespacePtr;
 
-class Environment : public Object
-{
-public:
-    virtual EnvironmentPtr getParent() const = 0;
-
-    virtual ModulePtr getModule() const
+    class Environment : public Object
     {
-        auto parent = getParent();
-        return parent->getModule();
-    }
+    public:
+        virtual EnvironmentPtr getParent() const = 0;
 
-    virtual NamespacePtr getNamespace() const
+        virtual ModulePtr getModule() const
+        {
+            auto parent = getParent();
+            return parent->getModule();
+        }
+
+        virtual NamespacePtr getNamespace() const
+        {
+            auto parent = getParent();
+            return parent->getNamespace();
+        }
+
+        virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol)
+        {
+            return getParent()->lookupSymbolRecursively(symbol);
+        }
+
+        virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding) = 0;
+    };
+
+    class EmptyEnvironment : public Environment
     {
-        auto parent = getParent();
-        return parent->getNamespace();
-    }
-
-    virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol)
-    {
-        return getParent()->lookupSymbolRecursively(symbol);
-    }
-
-    virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding) = 0;
-
-
-};
-
-class EmptyEnvironment : public Environment
-{
-public:
-    virtual EnvironmentPtr getParent() const
-    {
-        return nullptr;
-    }
-
-    virtual ModulePtr getModule() const
-    {
-        return nullptr;
-    }
-
-    virtual NamespacePtr getNamespace() const
-    {
-        auto parent = getParent();
-        return parent->getNamespace();
-    }
-
-    virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol)
-    {
-        (void)symbol;
-        return nullptr;
-    }
-
-    virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding)
-    {
-        (void)symbol;
-        (void)binding;
-        fprintf(stderr, "Cannot add local symbol binding to empty environments.\n");
-        abort();
-    }
-
-};
-
-class NonEmptyEnvironment : public Environment
-{
-public:
-    virtual EnvironmentPtr getParent() const
-    {
-        return parent;
-    }
-
-    virtual ValuePtr lookupLocalSymbol(SymbolPtr symbol)
-    {
-        auto it = symbolTable.find(symbol);
-        return it != symbolTable.end() ? it->second : nullptr;
-    }
-
-    virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol) override
-    {
-        auto localLookup = lookupLocalSymbol(symbol);
-        if (localLookup)
-            return localLookup;
-        else if(parent)
-            return parent->lookupSymbolRecursively(symbol);
-        else
+    public:
+        virtual EnvironmentPtr getParent() const
+        {
             return nullptr;
-    }
+        }
 
-    virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding) override
+        virtual ModulePtr getModule() const
+        {
+            return nullptr;
+        }
+
+        virtual NamespacePtr getNamespace() const
+        {
+            auto parent = getParent();
+            return parent->getNamespace();
+        }
+
+        virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol)
+        {
+            (void)symbol;
+            return nullptr;
+        }
+
+        virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding)
+        {
+            (void)symbol;
+            (void)binding;
+            fprintf(stderr, "Cannot add local symbol binding to empty environments.\n");
+            abort();
+        }
+    };
+
+    class NonEmptyEnvironment : public Environment
     {
-        symbolTable.insert(std::make_pair(symbol, binding));
-    }
+    public:
+        virtual EnvironmentPtr getParent() const
+        {
+            return parent;
+        }
 
-    EnvironmentPtr parent;
-    std::map<SymbolPtr, ValuePtr> symbolTable;
-};
+        virtual ValuePtr lookupLocalSymbol(SymbolPtr symbol)
+        {
+            auto it = symbolTable.find(symbol);
+            return it != symbolTable.end() ? it->second : nullptr;
+        }
 
-class IntrinsicsEnvironment : public NonEmptyEnvironment
-{
-public:
-    static IntrinsicsEnvironmentPtr uniqueInstance();
+        virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol) override
+        {
+            auto localLookup = lookupLocalSymbol(symbol);
+            if (localLookup)
+                return localLookup;
+            else if (parent)
+                return parent->lookupSymbolRecursively(symbol);
+            else
+                return nullptr;
+        }
 
-    ClassPtr lookupValidClass(const std::string &s);
-    void addIntrinsicClass(const ClassPtr &intrinsicClass);
+        virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding) override
+        {
+            symbolTable.insert(std::make_pair(symbol, binding));
+        }
 
-private:
-    void buildIntrinsicsState();
-    void buildBasicTypes();
-    void buildMetaHierarchy();
-    void buildObjectPrimitives();
-    void buildValuePrimitives();
+        EnvironmentPtr parent;
+        std::map<SymbolPtr, ValuePtr> symbolTable;
+    };
 
-    void addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
-    void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
-
-    static IntrinsicsEnvironmentPtr singleton;
-    std::map<std::string, ClassPtr> intrinsicClasses;
-    std::map<std::string, MetaclassPtr> intrinsicMetaclasses;
-};
-
-class ModuleEnvironment : public NonEmptyEnvironment
-{
-public:
-    ModuleEnvironment(const ModulePtr &cmodule, const EnvironmentPtr &cparent)
+    class IntrinsicsEnvironment : public NonEmptyEnvironment
     {
-        module = cmodule;
-        parent = cparent;
-    }
+    public:
+        static IntrinsicsEnvironmentPtr uniqueInstance();
 
-    virtual ModulePtr getModule() const
+        ClassPtr lookupValidClass(const std::string &s);
+        void addIntrinsicClass(const ClassPtr &intrinsicClass);
+
+    private:
+        void buildIntrinsicsState();
+        void buildBasicTypes();
+        void buildMetaHierarchy();
+        void buildObjectPrimitives();
+        void buildValuePrimitives();
+
+        void addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
+        void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
+
+        static IntrinsicsEnvironmentPtr singleton;
+        std::map<std::string, ClassPtr> intrinsicClasses;
+        std::map<std::string, MetaclassPtr> intrinsicMetaclasses;
+    };
+
+    class ModuleEnvironment : public NonEmptyEnvironment
     {
-        return module;
-    }
+    public:
+        ModuleEnvironment(const ModulePtr &cmodule, const EnvironmentPtr &cparent)
+        {
+            module = cmodule;
+            parent = cparent;
+        }
 
-    ModulePtr module;
-};
+        virtual ModulePtr getModule() const
+        {
+            return module;
+        }
 
-class NamespaceEnvironment : public NonEmptyEnvironment
-{
-public:
-    NamespaceEnvironment(const NamespacePtr cnamespce, const EnvironmentPtr &cparent)
+        ModulePtr module;
+    };
+
+    class NamespaceEnvironment : public NonEmptyEnvironment
     {
-        namespce = cnamespce;
-        parent = cparent;
-    }
+    public:
+        NamespaceEnvironment(const NamespacePtr cnamespce, const EnvironmentPtr &cparent)
+        {
+            namespce = cnamespce;
+            parent = cparent;
+        }
 
-    virtual NamespacePtr getNamespace() const
+        virtual NamespacePtr getNamespace() const
+        {
+            return namespce;
+        }
+
+        NamespacePtr namespce;
+    };
+
+    class LexicalEnvironment : public NonEmptyEnvironment
     {
-        return namespce;
-    }
+    public:
+        LexicalEnvironment(const EnvironmentPtr &cparent, const SourcePositionPtr &csourcePosition)
+        {
+            parent = cparent;
+            sourcePosition = csourcePosition;
+        }
 
-    NamespacePtr namespce;
-};
-
-class LexicalEnvironment : public NonEmptyEnvironment
-{
-public:
-    LexicalEnvironment(const EnvironmentPtr &cparent, const SourcePositionPtr &csourcePosition)
-    {
-        parent = cparent;
-        sourcePosition = csourcePosition;
-    }
-
-    SourcePositionPtr sourcePosition;
-};
+        SourcePositionPtr sourcePosition;
+    };
 
 }
-#endif //SYSMEL_ENVIRONMENT_HPP
+#endif // SYSMEL_ENVIRONMENT_HPP

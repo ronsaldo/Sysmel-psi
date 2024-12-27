@@ -39,9 +39,10 @@ void IntrinsicsEnvironment::buildIntrinsicsState()
 
 void IntrinsicsEnvironment::buildBasicTypes()
 {
-    addLocalSymbolBinding(Symbol::internString("Type"), Type::uniqueInstance());
-    addLocalSymbolBinding(Symbol::internString("Unit"), UnitType::uniqueInstance());
-    addLocalSymbolBinding(Symbol::internString("Bottom"), BottomType::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Type"),       Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("UnitType"),   UnitType::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("BottomType"), BottomType::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Void"),       VoidType::uniqueInstance());
 }
 
 void IntrinsicsEnvironment::buildMetaHierarchy()

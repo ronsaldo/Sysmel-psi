@@ -185,6 +185,42 @@ public:
     std::vector<ValuePtr> expressions;
 };
 
+class SemanticTuple : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticTuple(";
+        bool isFirst = true;
+        for(auto &expression : expressions)
+        {
+            if(isFirst)
+                isFirst = false;
+            else
+                out << ". ";
+            expression->printStringOn(out);
+        }
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto tupleObject = std::make_shared<ProductTypeValue> ();
+        tupleObject->type = std::static_pointer_cast<ProductType> (type);
+        tupleObject->elements.reserve(expressions.size());
+
+        for (const auto &expression: expressions)
+        {
+            auto expressionValue = expression->evaluateInEnvironment(environment);
+            tupleObject->elements.push_back(expressionValue);
+        }
+
+        return tupleObject;
+    }
+
+    std::vector<ValuePtr> expressions;
+};
+
 class SemanticByteArray : public SemanticValue
 {
 public:

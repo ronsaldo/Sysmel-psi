@@ -71,5 +71,53 @@ BottomTypePtr BottomType::uniqueInstance()
     return singletonValue;
 }
 
+// Bottom type
+VoidTypePtr VoidType::singletonValue;
+VoidTypePtr VoidType::uniqueInstance()
+{
+    if(!singletonValue)
+        singletonValue = std::make_shared<VoidType> ();
+    return singletonValue;
+}
+
+// Product type
+ValuePtr ProductTypeValue::getType() const
+{
+    return type;
+}
+
+ProductTypePtr ProductType::getOrCreateWithElementTypes(const std::vector<ValuePtr> &elements)
+{
+    auto it = ProductTypeCache.find(elements);
+    if(it != ProductTypeCache.end())
+        return it->second;
+
+    auto newProductType = std::make_shared<ProductType> ();
+    newProductType->elementTypes = elements;
+    ProductTypeCache.insert(std::make_pair(elements, newProductType));
+    return newProductType;
+}
+
+std::map<std::vector<ValuePtr>, ProductTypePtr> ProductType::ProductTypeCache;
+
+// Sum type
+ValuePtr SumTypeValue::getType() const
+{
+    return type;
+}
+
+SumTypePtr SumType::getOrCreateWithAlternativeTypes(const std::vector<ValuePtr> &alternatives)
+{
+    auto it = SumTypeCache.find(alternatives);
+    if(it != SumTypeCache.end())
+        return it->second;
+
+    auto newSumType = std::make_shared<SumType> ();
+    newSumType->alternativeTypes = alternatives;
+    SumTypeCache.insert(std::make_pair(alternatives, newSumType));
+    return newSumType;
+}
+
+std::map<std::vector<ValuePtr>, SumTypePtr> SumType::SumTypeCache;
 
 } //end of namespace Sysmel

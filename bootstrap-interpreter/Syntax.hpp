@@ -228,8 +228,22 @@ namespace Sysmel
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
-            (void)environment;
-            abort();
+            std::vector<ValuePtr> analyzedElements;
+            std::vector<ValuePtr> elementTypes;
+            analyzedElements.reserve(elements.size());
+            elementTypes.reserve(elements.size());
+            for (const auto &expression : elements)
+            {
+                auto analyzedElement = expression->analyzeInEnvironment(environment);
+                analyzedElements.push_back(analyzedElement);
+                elementTypes.push_back(analyzedElement->getTypeOrClass());
+            }
+
+            auto semanticTuple = std::make_shared<SemanticTuple>();
+            semanticTuple->sourcePosition = sourcePosition;
+            semanticTuple->type = ProductType::getOrCreateWithElementTypes(elementTypes);
+            semanticTuple->expressions = analyzedElements;
+            return semanticTuple;
         }
 
         std::vector<ValuePtr> elements;
