@@ -150,6 +150,41 @@ public:
     ValuePtr value;
 };
 
+class SemanticArray : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticArray(";
+        bool isFirst = true;
+        for(auto &expression : expressions)
+        {
+            if(isFirst)
+                isFirst = false;
+            else
+                out << ". ";
+            expression->printStringOn(out);
+        }
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto arrayObject = std::make_shared<Array> ();
+        arrayObject->values.reserve(expressions.size());
+
+        for (const auto &expression: expressions)
+        {
+            auto expressionValue = expression->evaluateInEnvironment(environment);
+            arrayObject->values.push_back(expressionValue);
+        }
+
+        return arrayObject;
+    }
+
+    std::vector<ValuePtr> expressions;
+};
+
 class SemanticByteArray : public SemanticValue
 {
 public:

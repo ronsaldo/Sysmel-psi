@@ -71,7 +71,8 @@
         "codecvt": "cpp",
         "fstream": "cpp",
         "iomanip": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "__split_buffer": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

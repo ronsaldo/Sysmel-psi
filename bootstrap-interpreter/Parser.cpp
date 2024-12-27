@@ -343,6 +343,31 @@ namespace Sysmel
         return expression;
     }
 
+    ValuePtr parseArray(ParserState &state)
+    {
+        auto startPosition = state.position;
+        assert(state.peekKind() == TokenKind::LeftBracket);
+        state.advance();
+
+        auto expressions = parseExpressionListUntilEndOrDelimiter(state, TokenKind::RightBracket);
+
+        if(state.peekKind() == TokenKind::RightBracket)
+        {
+            state.advance();
+        }
+        else
+        {
+            // TODO: add an error
+            abort();
+        }
+        
+        // Array
+        auto array = std::make_shared<SyntaxArray> ();
+        array->sourcePosition = state.sourcePositionFrom(startPosition);
+        array->expressions.swap(expressions);
+        return array;
+    }
+
     ValuePtr parseByteArray(ParserState &state)
     {
         auto startPosition = state.position;
@@ -1024,12 +1049,14 @@ namespace Sysmel
             return parseParenthesis(state);
         case TokenKind::LeftCurlyBracket:
             return parseBlock(state);
-         case TokenKind::ByteArrayStart:
-             return parseByteArray(state);
-         case TokenKind::DictionaryStart:
-             return parseDictionary(state);
+        case TokenKind::LeftBracket:
+            return parseArray(state);
+        case TokenKind::ByteArrayStart:
+            return parseByteArray(state);
+        case TokenKind::DictionaryStart:
+            return parseDictionary(state);
         case TokenKind::Colon:
-             return parseBindableName(state);
+            return parseBindableName(state);
         default:
             return parseLiteral(state);
         }

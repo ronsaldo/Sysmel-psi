@@ -9,6 +9,7 @@
 #include "Scanner.hpp"
 #include "Semantics.hpp"
 #include "Type.hpp"
+#include "Environment.hpp"
 #include <vector>
 #include <sstream>
 
@@ -477,6 +478,41 @@ namespace Sysmel
         }
 
         ValuePtr body;
+    };
+
+    class SyntaxArray : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxArray(";
+            bool isFirst = true;
+            for(auto &element : expressions)
+            {
+                if(isFirst)
+                    isFirst = false;
+                else
+                    out << ". ";
+                element->printStringOn(out);
+            }
+            out << ")";
+        }
+
+        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment)
+        {
+            std::vector<ValuePtr> analyzedElements;
+            analyzedElements.reserve(expressions.size());
+            for (const auto &expression : expressions)
+                analyzedElements.push_back(expression->analyzeInEnvironment(environment));
+
+            auto semanticArray = std::make_shared<SemanticArray>();
+            semanticArray->sourcePosition = sourcePosition;
+            semanticArray->type = IntrinsicsEnvironment::uniqueInstance()->lookupValidClass("Array");
+            semanticArray->expressions = analyzedElements;
+            return semanticArray;
+        }
+
+        std::vector<ValuePtr> expressions;
     };
 
     class SyntaxByteArray : public SyntacticValue
