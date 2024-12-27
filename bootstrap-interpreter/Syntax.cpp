@@ -52,4 +52,36 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
 
     return analyzedMessage;
 }
+
+ValuePtr SyntaxMessageCascade::analyzeInEnvironment(const EnvironmentPtr &environment)
+{
+    auto analyzedReceiver = receiver->analyzeInEnvironment(environment);
+    if(messages.empty())
+        return analyzedReceiver;
+
+    auto sequence = std::make_shared<SemanticValueSequence> ();
+    sequence->sourcePosition = sourcePosition;
+    sequence->elements.reserve(1 + messages.size());
+    sequence->elements.push_back(analyzedReceiver);
+
+    for (auto &message : messages)
+    {
+        auto cascadeMessage = std::static_pointer_cast<SyntaxMessageCascadeMessage> (message);
+        auto nonCascadedMessage = cascadeMessage->asMessageSendWithReceiver(analyzedReceiver);
+        auto analyzedMessage = nonCascadedMessage->analyzeInEnvironment(environment);
+        sequence->elements.push_back(analyzedMessage);
+    }
+
+    return sequence;
+}
+
+SyntaxMessageSendPtr SyntaxMessageCascadeMessage::asMessageSendWithReceiver(const ValuePtr &receiver)
+{
+    auto messageSend = std::make_shared<SyntaxMessageSend> ();
+    messageSend->sourcePosition = sourcePosition;
+    messageSend->receiver = receiver;
+    messageSend->selector = selector;
+    messageSend->arguments = arguments;
+    return messageSend;
+}
 }

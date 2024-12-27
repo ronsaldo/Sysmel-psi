@@ -113,6 +113,13 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
     });
 
     // Object
+    addPrimitiveToClass("Object", "printString", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 1);
+        auto string = arguments[0]->printString();
+        auto stringObject = std::make_shared<String> ();
+        stringObject->value = string;
+        return stringObject;
+    });
     addPrimitiveToClass("Object", "yourself", [](const std::vector<ValuePtr> &arguments){
         sysmelAssert(arguments.size() == 1);
         return arguments[0];
@@ -146,6 +153,25 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value * right->value;
         return result;
     });
+    addPrimitiveToClass("Integer", "//", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+
+        auto result = std::make_shared<Integer> ();
+        result->value = left->value / right->value;
+        return result;
+    });
+    addPrimitiveToClass("Integer", "\\\\", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+
+        auto result = std::make_shared<Integer> ();
+        result->value = left->value % right->value;
+        return result;
+    });
+    
 
     // Stream
     addPrimitiveToClass("Stream", "nextPutAll:", [](const std::vector<ValuePtr> &arguments) {

@@ -638,11 +638,7 @@ public:
         }
     }
 
-    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
-    {
-        (void)environment;
-        abort();
-    }
+    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override;
 
     ValuePtr receiver;
     std::vector<ValuePtr> messages;
@@ -683,6 +679,8 @@ public:
         abort();
     }
 
+    SyntaxMessageSendPtr asMessageSendWithReceiver(const ValuePtr &receiver);
+    
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
 };
