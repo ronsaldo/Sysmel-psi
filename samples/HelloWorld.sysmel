@@ -1,1 +1,1 @@
-stdout nextPutAll: "Hello World\n".
+Stdio stdout nextPutAll: "Hello World\n".

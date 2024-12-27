@@ -25,6 +25,11 @@ namespace Sysmel
         return std::make_pair(path.substr(0, pathSeparator), path.substr(pathSeparator + 1));
     }
 
+    std::string joinPath(const std::string &directory, const std::string &basename)
+    {
+        return directory + "/" + basename;
+    }
+
     std::string readWholeTextFile(const std::string &filename)
     {
         std::ifstream in(filename);

@@ -11,7 +11,7 @@
             "program": "${workspaceFolder}/build/bootstrap-interpreter",
             "args": ["samples/HelloWorld.sysmel"],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

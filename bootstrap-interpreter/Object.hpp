@@ -3,6 +3,7 @@
 
 #include "Value.hpp"
 #include "LargeInteger.hpp"
+#include "stdio.h"
 #include <map>
 #include <functional>
 
@@ -15,7 +16,8 @@ typedef std::shared_ptr<class UndefinedObject> UndefinedObjectPtr;
 typedef std::shared_ptr<class Class> ClassPtr;
 typedef std::shared_ptr<class Metaclass> MetaclassPtr;
 typedef std::shared_ptr<class Symbol> SymbolPtr;
-
+typedef std::shared_ptr<class BinaryStream> BinaryStreamPtr;
+typedef std::shared_ptr<class BinaryFileStream> BinaryFileStreamPtr;
 typedef std::function<ValuePtr (const std::vector<ValuePtr> &arguments)> PrimitiveImplementationSignature;
 
 class ProtoObject : public Value
@@ -244,6 +246,11 @@ class ByteArray : public ArrayedCollection
 public:
     virtual const char *getClassName() const override {return "ByteArray";}
 
+    virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const override
+    {
+        return std::make_pair(values.size(), values.data());
+    }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "#[";
@@ -266,6 +273,11 @@ class String : public ArrayedCollection
 {
 public:
     virtual const char *getClassName() const override {return "String";}
+
+    virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const override
+    {
+        return std::make_pair(value.size(), reinterpret_cast<const uint8_t*> (value.data()));
+    }
 
     virtual void printStringOn(std::ostream &out) const override
     {
@@ -294,6 +306,86 @@ public:
 private:
     static std::map<std::string, SymbolPtr> internedSymbols;
 };
+
+class Stream : public Object
+{
+public:
+    virtual const char *getClassName() const override {return "Stream";}
+
+    virtual void nextPutAll(const ValuePtr &data)
+    {
+        (void)data;
+        // By default do nothing.
+    }
+};
+
+class AbstractBinaryStream : public Stream
+{
+public:
+    virtual const char *getClassName() const override {return "AbstractBinaryStream";}
+
+    virtual void nextPutAll(const ValuePtr &data)
+    {
+        auto binaryData = data->getBinaryContentsData();
+        nextPutBytes(binaryData.first, binaryData.second);
+    }
+
+    virtual void nextPutBytes(size_t size, const uint8_t *bytes)
+    {
+        (void)size;
+        (void)bytes;
+    }
+};
+
+class BinaryStream : public AbstractBinaryStream
+{
+public:
+    virtual const char *getClassName() const override {return "BinaryStream";}
+
+    virtual void nextPutBytes(size_t size, const uint8_t *bytes)
+    {
+        data.reserve(size);
+        data.insert(data.end(), bytes, bytes + size);
+    }
+
+    std::vector<uint8_t> data;
+};
+
+
+class BinaryFileStream : public BinaryStream
+{
+public:
+    ~BinaryFileStream()
+    {
+        if(file && ownsFile)
+            fclose(file);
+    }
+
+    virtual const char *getClassName() const override {return "BinaryFileStream";}
+    
+    virtual void nextPutBytes(size_t size, const uint8_t *bytes)
+    {
+        fwrite(bytes, size, 1, file);
+    }
+
+    FILE *file = nullptr;
+    bool ownsFile = true;
+};
+
+class Stdio : public Object
+{
+public:
+    virtual const char *getClassName() const override {return "Stdio";}
+
+    static BinaryFileStreamPtr getValidStdinStream();
+    static BinaryFileStreamPtr getValidStdoutStream();
+    static BinaryFileStreamPtr getValidStderrStream();
+
+    static BinaryFileStreamPtr stdinStream;
+    static BinaryFileStreamPtr stdoutStream;
+    static BinaryFileStreamPtr stderrStream;
+};
+
 
 } // End of namespace Sysmel
 

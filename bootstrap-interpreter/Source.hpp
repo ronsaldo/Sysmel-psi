@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Object.hpp"
+#include "Utilities.hpp"
 
 #include <stdint.h>
 #include <string>
@@ -42,7 +43,7 @@ struct SourcePosition : public Object
 
     void formatIn(std::ostream &out)
     {
-        out << sourceCode->directory << sourceCode->name
+        out << joinPath(sourceCode->directory, sourceCode->name)
             << ':' << startLine << '.' << startColumn
             << '-' << startLine << '.' << endColumn;
     }

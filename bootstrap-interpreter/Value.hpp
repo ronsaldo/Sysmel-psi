@@ -55,6 +55,11 @@ public:
 
     virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
 
+    virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const
+    {
+        return std::make_pair(0, nullptr);
+    }
+
     virtual void printStringOn(std::ostream &out) const
     {
         out << "a Value";
@@ -67,7 +72,11 @@ public:
         return out.str();
     }
 
-    virtual SourcePositionPtr getSourcePosition() const {return nullptr;}
+    virtual SourcePositionPtr getSourcePosition() const
+    {
+        return sourcePosition;
+    }
+
     [[noreturn]] void throwExceptionWithMessage(const char *message);
     
     virtual SyntaxMessageCascadePtr asMessageCascade() const { return nullptr; }
@@ -89,6 +98,8 @@ public:
         });
         return errors;
     }
+
+    SourcePositionPtr sourcePosition;
 };
 
 

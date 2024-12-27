@@ -1,5 +1,7 @@
 #include "Object.hpp"
 #include "Environment.hpp"
+#include "stdio.h"
+
 namespace Sysmel
 {
 
@@ -38,5 +40,42 @@ ValuePtr PrimitiveMethod::applyWithArguments(const std::vector<ValuePtr> &argume
 {
     return implementation(arguments);
 }
+
+BinaryFileStreamPtr Stdio::getValidStdinStream()
+{
+    if (!stdinStream)
+    {
+        stdinStream = std::make_shared<BinaryFileStream> ();
+        stdinStream->file = stdin;
+        stdinStream->ownsFile = false;
+    }
+
+    return stdinStream;
+}
+BinaryFileStreamPtr Stdio::getValidStdoutStream()
+{
+    if (!stdoutStream)
+    {
+        stdoutStream = std::make_shared<BinaryFileStream> ();
+        stdoutStream->file = stdout;
+        stdoutStream->ownsFile = false;
+    }
+
+    return stdoutStream;
+}
+BinaryFileStreamPtr Stdio::getValidStderrStream()
+{
+    if (!stderrStream)
+    {
+        stderrStream = std::make_shared<BinaryFileStream> ();
+        stderrStream->file = stderr;
+        stderrStream->ownsFile = false;
+    }
+
+    return stderrStream;
+}
+BinaryFileStreamPtr Stdio::stdinStream;
+BinaryFileStreamPtr Stdio::stdoutStream;
+BinaryFileStreamPtr Stdio::stderrStream;
 
 } // End of namespace

@@ -137,7 +137,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value - right->value;
         return result;
     });
-    addPrimitiveToClass("Integer", "*", [](const std::vector<ValuePtr> &arguments){
+    addPrimitiveToClass("Integer", "*", [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
@@ -145,6 +145,28 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         auto result = std::make_shared<Integer> ();
         result->value = left->value * right->value;
         return result;
+    });
+
+    // Stream
+    addPrimitiveToClass("Stream", "nextPutAll:", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto stream = std::static_pointer_cast<Stream> (arguments[0]);
+        stream->nextPutAll(arguments[1]);
+        return stream;
+    });
+
+    // Stdio
+    addPrimitiveToMetaclass("Stdio", "stdin", [](const std::vector<ValuePtr> &arguments) {
+        (void)arguments;
+        return Stdio::getValidStdinStream();
+    });
+    addPrimitiveToMetaclass("Stdio", "stdout", [](const std::vector<ValuePtr> &arguments) {
+        (void)arguments;
+        return Stdio::getValidStdoutStream();
+    });
+    addPrimitiveToMetaclass("Stdio", "stderr", [](const std::vector<ValuePtr> &arguments) {
+        (void)arguments;
+        return Stdio::getValidStderrStream();
     });
 }
 
@@ -162,7 +184,7 @@ void IntrinsicsEnvironment::addPrimitiveToClass(const std::string &className, co
 void IntrinsicsEnvironment::addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature impl)
 {
     auto primitive = std::make_shared<PrimitiveMethod> (impl);
-    auto &clazz = intrinsicClasses[className];
+    auto &clazz = intrinsicMetaclasses[className];
     clazz->methodDict[Symbol::internString(selector)] = primitive;
 }
 

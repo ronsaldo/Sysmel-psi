@@ -22,15 +22,12 @@ class SyntacticValue : public Object
 public:
     virtual bool isSyntacticValue() const override {return true;}
     virtual void printStringOn(std::ostream &out) const override {out << "SyntacticValue";}
-    virtual SourcePositionPtr getSourcePosition() const override {return sourcePosition;}
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment)
     {
         (void)environment;
         abort();
     }
-
-    SourcePositionPtr sourcePosition;
 };
 
 class SyntaxValueSequence : public SyntacticValue
@@ -542,7 +539,16 @@ public:
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
     {
         (void)environment;
-        abort();
+        auto string = std::make_shared<String> ();
+        string->sourcePosition = sourcePosition;
+        string->value = value;
+
+        auto semanticLiteral = std::make_shared<SemanticLiteralValue> ();
+        semanticLiteral->sourcePosition = sourcePosition;
+        semanticLiteral->type = string->getClass();
+        semanticLiteral->value = string;
+        return semanticLiteral;
+
     }
 
     std::string value;    

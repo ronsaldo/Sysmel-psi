@@ -12,10 +12,8 @@ class SemanticValue : public Object
 public:
     virtual bool isSemanticValue() const override { return true;}
     virtual void printStringOn(std::ostream &out) const override {out << "SemanticValue";}
-    virtual SourcePositionPtr getSourcePosition() const override {return sourcePosition;}
     virtual ValuePtr getType() const override {return type;}
 
-    SourcePositionPtr sourcePosition;
     ValuePtr type;
 };
 

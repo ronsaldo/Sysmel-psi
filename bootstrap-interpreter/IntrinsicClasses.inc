@@ -18,8 +18,14 @@ AddClassWithSuperclass(Float, Number)
 AddClassWithSuperclass(Collection, Object)
 AddClassWithSuperclass(SequenceableCollection, Collection)
 AddClassWithSuperclass(ArrayedCollection, SequenceableCollection)
-
 AddClassWithSuperclass(Array, ArrayedCollection)
 AddClassWithSuperclass(ByteArray, ArrayedCollection)
 AddClassWithSuperclass(String, ArrayedCollection)
 AddClassWithSuperclass(Symbol, String)
+
+AddClassWithSuperclass(Stream, Object)
+AddClassWithSuperclass(AbstractBinaryStream, Stream)
+AddClassWithSuperclass(BinaryStream, AbstractBinaryStream)
+AddClassWithSuperclass(BinaryFileStream, BinaryStream)
+
+AddClassWithSuperclass(Stdio, Object)
