@@ -44,6 +44,15 @@ ValuePtr BasicType::getType() const
     return TypeUniverse::uniqueInstanceForIndex(0);
 }
 
+// Type
+TypePtr Type::singletonValue;
+TypePtr Type::uniqueInstance()
+{
+    if(!singletonValue)
+        singletonValue = std::make_shared<Type> ();
+    return singletonValue;
+}
+
 // Unit type
 UnitTypePtr UnitType::singletonValue;
 UnitTypePtr UnitType::uniqueInstance()

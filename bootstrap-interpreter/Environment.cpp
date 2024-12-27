@@ -1,5 +1,6 @@
 #include "Environment.hpp"
 #include "Assert.hpp"
+#include "Type.hpp"
 
 namespace Sysmel
 {
@@ -30,14 +31,17 @@ template<typename BaseClass> std::pair<ClassPtr, MetaclassPtr> makeClassAndMetac
 
 void IntrinsicsEnvironment::buildIntrinsicsState()
 {
-    buildBasicTypes();
     buildMetaHierarchy();
+    buildBasicTypes();
     buildObjectPrimitives();
     buildValuePrimitives();
 }
 
 void IntrinsicsEnvironment::buildBasicTypes()
 {
+    addLocalSymbolBinding(Symbol::internString("Type"), Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Unit"), UnitType::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Bottom"), BottomType::uniqueInstance());
 }
 
 void IntrinsicsEnvironment::buildMetaHierarchy()

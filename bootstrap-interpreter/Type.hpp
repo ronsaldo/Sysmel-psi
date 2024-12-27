@@ -65,6 +65,9 @@ public:
     }
 
     static TypePtr uniqueInstance();
+
+private:
+    static TypePtr singletonValue;
 };
 
 class BasicType : public TypeBehavior
