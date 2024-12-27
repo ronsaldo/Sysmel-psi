@@ -100,7 +100,8 @@ public:
         argumentValues.reserve(arguments.size());
         for (auto& arg: arguments)
         {
-            argumentValues.push_back(arg->evaluateInEnvironment(environment));
+            auto evaluatedArgument = arg->evaluateInEnvironment(environment);
+            argumentValues.push_back(evaluatedArgument);
         }
 
         return receiverValue->performWithArguments(selectorValue, argumentValues);
@@ -118,6 +119,21 @@ public:
         out << "SemanticLiteralValue(";
         value->printStringOn(out);
         out << ")";
+    }
+
+    virtual ValuePtr getType() const override
+    {
+        return value->getType();
+    }
+
+    virtual ValuePtr getClass() const override
+    {
+        return value->getClass();
+    }
+
+    virtual ValuePtr getTypeOrClass() const override
+    {
+        return value->getTypeOrClass();
     }
 
     virtual SymbolPtr asAnalyzedSymbolValue() override 

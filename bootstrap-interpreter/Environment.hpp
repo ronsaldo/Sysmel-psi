@@ -36,6 +36,9 @@ public:
         return getParent()->lookupSymbolRecursively(symbol);
     }
 
+    virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding) = 0;
+
+
 };
 
 class EmptyEnvironment : public Environment
@@ -62,6 +65,15 @@ public:
         (void)symbol;
         return nullptr;
     }
+
+    virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding)
+    {
+        (void)symbol;
+        (void)binding;
+        fprintf(stderr, "Cannot add local symbol binding to empty environments.\n");
+        abort();
+    }
+
 };
 
 class NonEmptyEnvironment : public Environment
@@ -89,7 +101,7 @@ public:
             return nullptr;
     }
 
-    void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding)
+    virtual void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding) override
     {
         symbolTable.insert(std::make_pair(symbol, binding));
     }

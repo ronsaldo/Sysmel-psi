@@ -37,6 +37,17 @@ public:
         return getClass();
     }
 
+    virtual bool isSatisfiedByType(const ValuePtr &sourceType)
+    {
+        auto myClass = getClass();
+        // TODO: Add gradual check here
+        auto otherClass = sourceType->getClass();
+        if(!otherClass)
+            return false;
+        
+        return otherClass->isSubclassOf(myClass);
+    }
+
     mutable ValuePtr clazz;
     size_t identityHash;
 };
@@ -87,6 +98,20 @@ public:
         if(superclass)
             return superclass->lookupSelector(selector);
         return nullptr;
+    }
+
+    virtual bool isSubclassOf(const ValuePtr &targetSuperclass) override
+    {
+        auto currentBehavior = std::static_pointer_cast<Behavior> (shared_from_this());
+        while(currentBehavior)
+        {
+            if(currentBehavior == targetSuperclass)
+                return true;
+
+            currentBehavior = std::static_pointer_cast<Behavior> (currentBehavior->superclass);
+        }
+
+        return false;
     }
 
     ValuePtr superclass;

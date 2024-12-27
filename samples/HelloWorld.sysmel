@@ -1,1 +1,3 @@
-Stdio stdout nextPutAll: "Hello World "; nextPutAll: 42 printString; nextPutAll: "\n".
+:(String)hello := "Hello World ".
+:(Number)number := 42.5.
+Stdio stdout nextPutAll: hello; nextPutAll: number printString; nextPutAll: "\n".

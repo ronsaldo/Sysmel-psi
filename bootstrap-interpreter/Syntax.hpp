@@ -115,6 +115,11 @@ public:
 class SyntaxBindableName : public SyntacticValue
 {
 public:
+    virtual bool isBindableName() const override
+    {
+        return true;
+    }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SyntaxBindableName(";
@@ -356,8 +361,29 @@ public:
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
     {
-        (void)environment;
-        abort();
+        auto analyzedValue = value->analyzeInEnvironment(environment);
+        auto expandedStore = store->analyzeInEnvironmentForMacroExpansionOnly(environment);
+        if (expandedStore->isBindableName())
+        {
+            //printf("analyzedValue: %s\n", analyzedValue->printString().c_str());
+
+            auto bindableName = std::static_pointer_cast<SyntaxBindableName> (expandedStore);
+            auto name = bindableName->nameExpression->analyzeAndEvaluateInEnvironment(environment);
+            //printf("name: %s\n", name->asAnalyzedSymbolValue()->printString().c_str());
+            if(bindableName->typeExpression)
+            {
+                auto expectedType = bindableName->typeExpression->analyzeAndEvaluateInEnvironment(environment);
+                analyzedValue = analyzedValue->coerceIntoExpectedTypeAt(expectedType, getSourcePosition());
+            }
+            
+            environment->addLocalSymbolBinding(name->asAnalyzedSymbolValue(), analyzedValue);
+            return analyzedValue;
+        }
+        else
+        {
+            auto analyzedStore = store->analyzeInEnvironment(environment);
+            abort();
+        }
     }
 
     ValuePtr store;

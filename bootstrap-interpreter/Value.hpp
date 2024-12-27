@@ -46,14 +46,20 @@ public:
     virtual bool isSemanticValue() const { return false; }
     virtual bool isSyntacticValue() const { return false; }
     virtual bool isSyntaxError() const { return false; }
+    virtual bool isBindableName() const { return false; }
 
     virtual SymbolPtr asAnalyzedSymbolValue() { return nullptr; } 
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment);
+    virtual ValuePtr analyzeInEnvironmentForMacroExpansionOnly(const EnvironmentPtr &environment);
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment);
     virtual ValuePtr analyzeAndEvaluateInEnvironment(const EnvironmentPtr &environment);
-
     virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
+
+    virtual bool isSatisfiedByType(const ValuePtr &sourceType);
+    virtual ValuePtr coerceIntoExpectedTypeAt(const ValuePtr &targetType, const SourcePositionPtr &coercionLocation);
+    virtual bool isSubclassOf(const ValuePtr &targetSuperclass);
+    virtual bool isSubtypeOf(const ValuePtr &targetSupertype);
 
     virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const
     {
@@ -78,6 +84,7 @@ public:
     }
 
     [[noreturn]] void throwExceptionWithMessage(const char *message);
+    [[noreturn]] void throwExceptionWithMessageAt(const char *message, const SourcePositionPtr &position);
     
     virtual SyntaxMessageCascadePtr asMessageCascade() const { return nullptr; }
 
