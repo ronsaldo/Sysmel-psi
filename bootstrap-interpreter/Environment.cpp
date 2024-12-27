@@ -68,6 +68,7 @@ void IntrinsicsEnvironment::buildMetaHierarchy()
     {
         addLocalSymbolBinding(Symbol::internString(pair.first->name), pair.first);
     }
+    addLocalSymbolBinding(Symbol::internString("nil"), UndefinedObject::uniqueInstance());
 
     // Connect the superclasses
 #define AddClass(cls)
@@ -93,6 +94,7 @@ void IntrinsicsEnvironment::buildMetaHierarchy()
 #undef AddClassWithSuperclass
 
     // Meta hiearchy short-circuit.
+    intrinsicClasses["ProtoObject"]->superclass = UndefinedObject::uniqueInstance();
     intrinsicMetaclasses["ProtoObject"]->superclass = intrinsicClasses["Class"];
 }
 
@@ -133,6 +135,27 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
     addPrimitiveToClass("Object", "yourself", [](const std::vector<ValuePtr> &arguments){
         sysmelAssert(arguments.size() == 1);
         return arguments[0];
+    });
+    
+    addPrimitiveToClass("Object", "at:", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 2);
+        auto index = arguments[1]->evaluateAsIndex();
+        return arguments[0]->getElementAtIndex(index);
+    });
+    addPrimitiveToClass("Object", "at:put:", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 3);
+        auto index = arguments[1]->evaluateAsIndex();
+        return arguments[0]->setElementAtIndex(index, arguments[2]);
+    });
+
+    // Collection
+    addPrimitiveToClass("Collection", "size", [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 1);
+        auto collection = std::static_pointer_cast<Collection> (arguments[0]);
+        auto size = collection->getSize();
+        auto sizeInteger = std::make_shared<Integer> ();
+        sizeInteger->value = LargeInteger(size);
+        return sizeInteger;
     });
 
     // Integer

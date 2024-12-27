@@ -62,7 +62,7 @@ namespace Sysmel
     {
     public:
         virtual const char *getClassName() const override { return "UndefinedObject"; }
-
+        virtual bool isNil() const { return true; };
         static UndefinedObjectPtr uniqueInstance();
 
     private:
@@ -104,7 +104,7 @@ namespace Sysmel
         virtual bool isSubclassOf(const ValuePtr &targetSuperclass) override
         {
             auto currentBehavior = std::static_pointer_cast<Behavior>(shared_from_this());
-            while (currentBehavior)
+            while (currentBehavior && !currentBehavior->isNil())
             {
                 if (currentBehavior == targetSuperclass)
                     return true;
@@ -190,6 +190,11 @@ namespace Sysmel
     public:
         virtual const char *getClassName() const override { return "Character"; }
 
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << char(value);
+        }
+
         virtual std::pair<size_t, const uint8_t *> getBinaryContentsData() const override
         {
             return std::make_pair(4, reinterpret_cast<const uint8_t *>(&value));
@@ -233,6 +238,14 @@ namespace Sysmel
             return firstWord & 0xFF;
         }
 
+        virtual size_t evaluateAsIndex()
+        {
+            size_t index = size_t(value.wordAt(0)) | (size_t(value.wordAt(1)) << 32);
+            if (value.signBit)
+                index = -index;
+            return index;
+        }
+
         LargeInteger value;
     };
 
@@ -253,6 +266,11 @@ namespace Sysmel
     {
     public:
         virtual const char *getClassName() const override { return "Collection"; }
+
+        virtual size_t getSize() const
+        {
+            return 0;
+        }
     };
 
     class SequenceableCollection : public Collection
@@ -287,6 +305,25 @@ namespace Sysmel
             out << ']';
         }
 
+        virtual size_t getSize() const
+        {
+            return values.size();
+        }
+
+        virtual ValuePtr getElementAtIndex(size_t index) override
+        {
+            if(index >= values.size())
+                throwExceptionWithMessage("Index is out of bounds.");
+            return values[index];
+        }
+
+        virtual ValuePtr setElementAtIndex(size_t index, const ValuePtr &value)override
+        {
+            if(index >= values.size())
+                throwExceptionWithMessage("Index is out of bounds.");
+            return values[index] = value;
+        }
+        
         std::vector<ValuePtr> values;
     };
 
@@ -315,6 +352,29 @@ namespace Sysmel
             out << ']';
         }
 
+        virtual size_t getSize() const
+        {
+            return values.size();
+        }
+
+        virtual ValuePtr getElementAtIndex(size_t index) override
+        {
+            if(index >= values.size())
+                throwExceptionWithMessage("Index is out of bounds.");
+            
+            auto integer = std::make_shared<Integer> ();
+            integer->value = LargeInteger(values[index]);
+            return integer;
+        }
+
+        virtual ValuePtr setElementAtIndex(size_t index, const ValuePtr &value) override
+        {
+            if(index >= values.size())
+                throwExceptionWithMessage("Index is out of bounds.");
+            values[index] = value->evaluateAsSingleByte();
+            return value;
+        }
+
         std::vector<uint8_t> values;
     };
 
@@ -331,6 +391,29 @@ namespace Sysmel
         virtual void printStringOn(std::ostream &out) const override
         {
             out << '"' << value << '"';
+        }
+
+        virtual size_t getSize() const
+        {
+            return value.size();
+        }
+
+        virtual ValuePtr getElementAtIndex(size_t index) override
+        {
+            if(index >= value.size())
+                throwExceptionWithMessage("Index is out of bounds.");
+            
+            auto character = std::make_shared<Character> ();
+            character->value = value[index];
+            return character;
+        }
+
+        virtual ValuePtr setElementAtIndex(size_t index, const ValuePtr &newValue) override
+        {
+            if(index >= value.size())
+                throwExceptionWithMessage("Index is out of bounds.");
+            value[index] = newValue->evaluateAsSingleByte();
+            return shared_from_this();
         }
 
         std::string value;
@@ -350,6 +433,13 @@ namespace Sysmel
         virtual void printStringOn(std::ostream &out) const override
         {
             out << "#\"" << value << '"';
+        }
+
+        virtual ValuePtr setElementAtIndex(size_t index, const ValuePtr &newValue) override
+        {
+            (void)index;
+            (void)newValue;
+            throwExceptionWithMessage("Symbol mutation is forbidden.");
         }
 
     private:

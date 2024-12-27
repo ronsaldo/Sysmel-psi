@@ -47,6 +47,7 @@ public:
     virtual bool isSyntacticValue() const { return false; }
     virtual bool isSyntaxError() const { return false; }
     virtual bool isBindableName() const { return false; }
+    virtual bool isNil() const { return false; };
 
     virtual SymbolPtr asAnalyzedSymbolValue() { return nullptr; } 
 
@@ -64,6 +65,24 @@ public:
     virtual uint8_t evaluateAsSingleByte() 
     {
         throwExceptionWithMessage("Invalid expression for evaluating a single byte.");
+    }
+
+    virtual size_t evaluateAsIndex()
+    {
+        throwExceptionWithMessage("Invalid expression for evaluating an index.");
+    }
+    
+    virtual ValuePtr getElementAtIndex(size_t index)
+    {
+        (void)index;
+        throwExceptionWithMessage("Object is not a container of indexed values.");
+    }
+
+    virtual ValuePtr setElementAtIndex(size_t index, const ValuePtr &value)
+    {
+        (void)index;
+        (void)value;
+        throwExceptionWithMessage("Object is not a container of indexed values.");
     }
 
     virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const
