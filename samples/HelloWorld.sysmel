@@ -1,3 +1,4 @@
 :(String)hello := "Hello World ".
 :(Number)number := 42.5.
 Stdio stdout nextPutAll: hello; nextPutAll: number printString; nextPutAll: "\n".
+Stdio stdout nextPutAll: #[65 . 66]

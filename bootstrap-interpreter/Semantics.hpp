@@ -150,6 +150,41 @@ public:
     ValuePtr value;
 };
 
+class SemanticByteArray : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticByteArray(";
+        bool isFirst = true;
+        for(auto &byte : byteExpressions)
+        {
+            if(isFirst)
+                isFirst = false;
+            else
+                out << ". ";
+            byte->printStringOn(out);
+        }
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto byteArrayObject = std::make_shared<ByteArray> ();
+        byteArrayObject->values.reserve(byteExpressions.size());
+
+        for (const auto &byteExpression: byteExpressions)
+        {
+            auto byteExpressionValue = byteExpression->evaluateInEnvironment(environment);
+            byteArrayObject->values.push_back(byteExpressionValue->evaluateAsSingleByte());
+        }
+
+        return byteArrayObject;
+    }
+
+    std::vector<ValuePtr> byteExpressions;
+};
+
 } // End of namespace Sysmel
 
 #endif //SYSMEL_SEMANTICS_HPP

@@ -112,6 +112,16 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         return result;
     });
 
+    // Behavior
+    addPrimitiveToClass("Behavior", "withSelector:addMethod:", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 3);
+        auto behavior = std::static_pointer_cast<Behavior> (arguments[0]);
+        auto selector = arguments[1];
+        auto method = arguments[0];
+        behavior->methodDict.insert(std::make_pair(selector->asAnalyzedSymbolValue(), method));
+        return behavior;
+    });
+
     // Object
     addPrimitiveToClass("Object", "printString", [](const std::vector<ValuePtr> &arguments){
         sysmelAssert(arguments.size() == 1);
@@ -174,6 +184,12 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
     
 
     // Stream
+    addPrimitiveToClass("Stream", "nextPut:", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto stream = std::static_pointer_cast<Stream> (arguments[0]);
+        stream->nextPut(arguments[1]);
+        return stream;
+    });
     addPrimitiveToClass("Stream", "nextPutAll:", [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto stream = std::static_pointer_cast<Stream> (arguments[0]);

@@ -60,6 +60,11 @@ public:
     virtual ValuePtr coerceIntoExpectedTypeAt(const ValuePtr &targetType, const SourcePositionPtr &coercionLocation);
     virtual bool isSubclassOf(const ValuePtr &targetSuperclass);
     virtual bool isSubtypeOf(const ValuePtr &targetSupertype);
+    
+    virtual uint8_t evaluateAsSingleByte() 
+    {
+        throwExceptionWithMessage("Invalid expression for evaluating a single byte.");
+    }
 
     virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const
     {

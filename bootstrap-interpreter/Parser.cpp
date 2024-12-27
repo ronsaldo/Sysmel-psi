@@ -343,6 +343,31 @@ namespace Sysmel
         return expression;
     }
 
+    ValuePtr parseByteArray(ParserState &state)
+    {
+        auto startPosition = state.position;
+        assert(state.peekKind() == TokenKind::ByteArrayStart);
+        state.advance();
+
+        auto expressions = parseExpressionListUntilEndOrDelimiter(state, TokenKind::RightBracket);
+
+        if(state.peekKind() == TokenKind::RightBracket)
+        {
+            state.advance();
+        }
+        else
+        {
+            // TODO: an error
+            abort();
+        }
+        
+        // Byte
+        auto byteArray = std::make_shared<SyntaxByteArray> ();
+        byteArray->sourcePosition = state.sourcePositionFrom(startPosition);
+        byteArray->byteExpressions.swap(expressions);
+        return byteArray;
+    }
+
     bool isUnaryPostfixTokenKind(TokenKind kind)
     {
         switch(kind)
@@ -999,6 +1024,8 @@ namespace Sysmel
             return parseParenthesis(state);
         case TokenKind::LeftCurlyBracket:
             return parseBlock(state);
+         case TokenKind::ByteArrayStart:
+             return parseByteArray(state);
          case TokenKind::DictionaryStart:
              return parseDictionary(state);
         case TokenKind::Colon:
