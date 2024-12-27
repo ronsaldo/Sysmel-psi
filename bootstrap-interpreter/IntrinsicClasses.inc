@@ -14,5 +14,12 @@ AddClassWithSuperclass(Character, Magnitude)
 AddClassWithSuperclass(Number, Magnitude)
 AddClassWithSuperclass(Integer, Number)
 AddClassWithSuperclass(Float, Number)
-AddClassWithSuperclass(String, Object)
+
+AddClassWithSuperclass(Collection, Object)
+AddClassWithSuperclass(SequenceableCollection, Collection)
+AddClassWithSuperclass(ArrayedCollection, SequenceableCollection)
+
+AddClassWithSuperclass(Array, ArrayedCollection)
+AddClassWithSuperclass(ByteArray, ArrayedCollection)
+AddClassWithSuperclass(String, ArrayedCollection)
 AddClassWithSuperclass(Symbol, String)

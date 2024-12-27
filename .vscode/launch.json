@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bootstrap-interpreter",
-            "args": ["-ep", "Object"],
+            "args": ["samples/HelloWorld.sysmel"],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],

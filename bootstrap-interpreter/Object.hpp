@@ -65,7 +65,7 @@ public:
         auto method = receiver->getClass()->lookupSelector(selector);
         if(!method)
         {
-            throwExceptionWithMessage(("Failed to find method " + selector->printString() + " in " + receiver->getClass()->printString()).c_str());
+            receiver->throwExceptionWithMessage(("Failed to find method " + selector->printString() + " in " + receiver->getClass()->printString()).c_str());
         }
         
         std::vector<ValuePtr> allArguments;
@@ -198,7 +198,71 @@ public:
     double value;
 };
 
-class String : public Object
+class Collection : public Object
+{
+public:
+    virtual const char *getClassName() const override {return "Collection";}
+};
+
+class SequenceableCollection : public Collection
+{
+public:
+    virtual const char *getClassName() const override {return "SequenceableCollection";}
+};
+
+class ArrayedCollection : public Collection
+{
+public:
+    virtual const char *getClassName() const override {return "ArrayedCollection";}
+};
+
+class Array : public ArrayedCollection
+{
+public:
+    virtual const char *getClassName() const override {return "Array";}
+
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << '[';
+        bool first = true;
+        for (auto &value : values)
+        {
+            if(first)
+                first = false;
+            else
+                out << ". ";
+            value->printStringOn(out);
+        }
+        out << ']';
+    }
+
+    std::vector<ValuePtr> values;
+};
+
+class ByteArray : public ArrayedCollection
+{
+public:
+    virtual const char *getClassName() const override {return "ByteArray";}
+
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "#[";
+        bool first = true;
+        for (auto &value : values)
+        {
+            if(first)
+                first = false;
+            else
+                out << ". ";
+            out << value;
+        }
+        out << ']';
+    }
+
+    std::vector<uint8_t> values;
+};
+
+class String : public ArrayedCollection
 {
 public:
     virtual const char *getClassName() const override {return "String";}

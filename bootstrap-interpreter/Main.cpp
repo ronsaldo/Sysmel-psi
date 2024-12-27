@@ -2,6 +2,7 @@
 #include "Parser.hpp"
 #include "Syntax.hpp"
 #include "Module.hpp"
+#include "Utilities.hpp"
 #include <stdio.h>
 #include <string.h>
 #include <vector>
@@ -70,14 +71,8 @@ ValuePtr evaluateSourceCode(const SourceCodePtr &sourceCode)
     return result;
 }
 
-bool evaluateAndPrintString(const std::string &sourceText)
+bool evaluateAndPrintSourceCode(const SourceCodePtr &sourceCode)
 {
-    auto sourceCode = std::make_shared<SourceCode> ();
-    sourceCode->directory = ".";
-    sourceCode->name = "cli";
-    sourceCode->language = "sysmel";
-    sourceCode->text = sourceText;
-
     auto evaluationResult = evaluateSourceCode(sourceCode);
     if(!evaluationResult)
         return false;
@@ -86,12 +81,39 @@ bool evaluateAndPrintString(const std::string &sourceText)
     return true;
 }
 
+bool evaluateAndPrintString(const std::string &sourceText)
+{
+    auto sourceCode = std::make_shared<SourceCode> ();
+    sourceCode->directory = "";
+    sourceCode->name = "<cli>";
+    sourceCode->language = "sysmel";
+    sourceCode->text = sourceText;
+
+    return evaluateAndPrintSourceCode(sourceCode);
+}
+
+bool evaluateInputFile(const std::string fileName)
+{
+    auto dirAndBasename = splitPath(fileName);
+    auto sourceText = readWholeTextFile(fileName);
+
+    auto sourceCode = std::make_shared<SourceCode> ();
+    sourceCode->directory = dirAndBasename.first;
+    sourceCode->name = dirAndBasename.second;
+    sourceCode->language = "sysmel";
+    sourceCode->text = sourceText;
+
+    auto result = evaluateSourceCode(sourceCode);
+    return result != nullptr;
+}
+
 int main(int argc, const char **argv)
 {
     std::vector<std::string> inputFileNames;
 
     currentModule = std::make_shared<Module> ();
     currentModule->initializeWithName("cli");
+    int exitCode = 0;
 
     for(int i = 1; i < argc; ++i)
     {
@@ -111,7 +133,7 @@ int main(int argc, const char **argv)
             else if(!strcmp(argument, "-ep") && i + 1 < argc)
             {
                 if(!evaluateAndPrintString(argv[++i]))
-                    return 1;
+                    exitCode = 1;
             }
         }
         else
@@ -122,8 +144,9 @@ int main(int argc, const char **argv)
 
     for(auto &inputFileName : inputFileNames)
     {
-        printf("TODO: evaluate input file %s\n", inputFileName.c_str());
+        if(!evaluateInputFile(inputFileName))
+            exitCode = 1;
     }
 
-    return 0;
+    return exitCode;
 }

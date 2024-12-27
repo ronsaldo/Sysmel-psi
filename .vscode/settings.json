@@ -67,7 +67,10 @@
         "map": "cpp",
         "__config": "cpp",
         "version": "cpp",
-        "__locale": "cpp"
+        "__locale": "cpp",
+        "codecvt": "cpp",
+        "fstream": "cpp",
+        "iomanip": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }
