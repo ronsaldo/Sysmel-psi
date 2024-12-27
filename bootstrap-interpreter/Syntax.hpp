@@ -282,8 +282,12 @@ public:
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
     {
-        (void)environment;
-        abort();
+        auto symbol = Symbol::internString(value);
+        auto lookupResult = environment->lookupSymbolRecursively(symbol);
+        if(!lookupResult)
+            throwExceptionWithMessage(("Failed to find " + symbol->printString() + " in current lexical scope.").c_str());
+
+        return lookupResult->analyzeIdentifierReferenceInEnvironment(shared_from_this(), environment);
     }
 
     std::string value;    

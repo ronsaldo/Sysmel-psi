@@ -1,5 +1,6 @@
 #include "Value.hpp"
 #include "Type.hpp"
+#include "Semantics.hpp"
 #include <exception>
 #include <sstream>
 
@@ -79,6 +80,15 @@ namespace Sysmel
     ValuePtr Value::analyzeAndEvaluateInEnvironment(const EnvironmentPtr &environment)
     {
         return analyzeInEnvironment(environment)->evaluateInEnvironment(environment);
+    }
+
+    ValuePtr Value::analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment)
+    {
+        (void)environment;
+        auto literal = std::make_shared<SemanticLiteralValue> ();
+        literal->sourcePosition = syntaxNode->getSourcePosition();
+        literal->value = shared_from_this();
+        return literal;
     }
 
     ValuePtr Value::getClass() const

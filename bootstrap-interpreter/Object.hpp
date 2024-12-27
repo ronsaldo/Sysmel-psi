@@ -116,6 +116,20 @@ class Metaclass : public ClassDescription
 public:
     virtual const char *getClassName() const override {return "Metaclass";}
 
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        auto clazz = thisClass.lock();
+        if (clazz)
+        {
+            clazz->printStringOn(out);
+            out << " class";
+        }
+        else
+        {
+            out << "a Metaclass";
+        }
+    }
+
     ClassWeakPtr thisClass;
 };
 

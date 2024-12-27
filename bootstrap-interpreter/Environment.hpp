@@ -78,18 +78,20 @@ public:
         return it != symbolTable.end() ? it->second : nullptr;
     }
 
-    virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol)
+    virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol) override
     {
         auto localLookup = lookupLocalSymbol(symbol);
         if (localLookup)
             return localLookup;
+        else if(parent)
+            return parent->lookupSymbolRecursively(symbol);
         else
             return nullptr;
     }
 
     void addLocalSymbolBinding(SymbolPtr symbol, ValuePtr binding)
     {
-        symbolTable[symbol] = binding;
+        symbolTable.insert(std::make_pair(symbol, binding));
     }
 
     EnvironmentPtr parent;

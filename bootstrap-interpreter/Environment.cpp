@@ -62,7 +62,7 @@ void IntrinsicsEnvironment::buildMetaHierarchy()
 
     for (auto &pair : intrinsicClassesAndMetaclasses)
     {
-        addLocalSymbolBinding(Symbol::internString(pair.first->name), pair.second);
+        addLocalSymbolBinding(Symbol::internString(pair.first->name), pair.first);
     }
 
     // Connect the superclasses

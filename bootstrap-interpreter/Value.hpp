@@ -53,6 +53,8 @@ public:
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment);
     virtual ValuePtr analyzeAndEvaluateInEnvironment(const EnvironmentPtr &environment);
 
+    virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
+
     virtual void printStringOn(std::ostream &out) const
     {
         out << "a Value";
