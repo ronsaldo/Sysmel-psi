@@ -449,8 +449,8 @@ public:
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
     {
-        (void)environment;
-        abort();
+        auto newEnvironment = std::make_shared<LexicalEnvironment> (environment, getSourcePosition());
+        return body->analyzeInEnvironment(newEnvironment);
     }
 
     ValuePtr body;
@@ -472,7 +472,15 @@ public:
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
     {
         (void)environment;
-        abort();
+        auto floatObject = std::make_shared<Float> ();
+        floatObject->clazz = IntrinsicsEnvironment::uniqueInstance()->lookupValidClass("Float");
+        floatObject->value = value;
+
+        auto semanticLiteral = std::make_shared<SemanticLiteralValue> ();
+        semanticLiteral->sourcePosition = sourcePosition;
+        semanticLiteral->type = floatObject->clazz;
+        semanticLiteral->value = floatObject;
+        return semanticLiteral;
     }
 
     double value;
@@ -673,14 +681,8 @@ public:
         }
     }
 
-    virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
-    {
-        (void)environment;
-        abort();
-    }
-
     SyntaxMessageSendPtr asMessageSendWithReceiver(const ValuePtr &receiver);
-    
+
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
 };
