@@ -63,6 +63,60 @@ public:
     std::vector<ValuePtr> elements;
 };
 
+class SemanticApplication : public SemanticValue
+{
+public:
+    virtual const char *getClassName() const { return "SemanticApplication"; }
+
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "MessageSend(";
+        if(functional)
+        {
+            functional->printStringOn(out);
+        }
+        for(auto &argument : arguments)
+        {
+            out << ", ";
+            argument->printStringOn(out);
+        }
+        out << ")";
+    }
+
+    virtual void traverseChildren(const std::function<void (ValuePtr)> &function) const override
+    {
+        if(functional)
+        {
+            function(functional);
+            functional->traverseChildren(function);
+        }
+
+        for(const auto &argument : arguments)
+        {
+            function(argument);
+            argument->traverseChildren(function);
+        }
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto functionalValue = functional->evaluateInEnvironment(environment);
+        std::vector<ValuePtr> argumentValues;
+        argumentValues.reserve(arguments.size());
+        for(auto &argument : arguments)
+        {
+            auto argumentValue = argument->evaluateInEnvironment(environment);
+            argumentValues.push_back(argumentValue);
+        }
+
+        auto result = functionalValue->applyWithArguments(argumentValues);
+        return result;
+    }
+
+    ValuePtr functional;
+    std::vector<ValuePtr> arguments;
+};
+
 class SemanticMessageSend : public SemanticValue
 {
 public:
@@ -185,7 +239,15 @@ public:
 
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
-        abort();
+        (void)environment;
+        auto lambdaValue = std::make_shared<LambdaValue> ();
+        lambdaValue->name = name;
+        lambdaValue->type = type;
+        lambdaValue->closure = closure;
+        lambdaValue->body = body;
+        lambdaValue->argumentBindings = argumentBindings;
+    
+        return lambdaValue;
     }
 };
 
@@ -193,6 +255,8 @@ class SemanticPi : public SemanticFunctionalValue
 {
 public:
     virtual const char *getClassName() const { return "SemanticPi"; }
+
+    virtual ArgumentTypeAnalysisContextPtr createArgumentTypeAnalysisContext() override;
 
     virtual void printStringOn(std::ostream &out) const override
     {
@@ -210,6 +274,8 @@ public:
         return pi;
     }
 };
+
+typedef std::shared_ptr<SemanticPi> SemanticPiPtr;
 
 class SemanticSigma : public SemanticFunctionalValue
 {
@@ -401,7 +467,11 @@ public:
 
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
-        abort();
+        auto foundValue = environment->lookupValueForBinding(identifierBinding);
+        if(!foundValue)
+            throwExceptionWithMessage("Failed to find value for binding");
+        
+        return foundValue;
     }
 
     ValuePtr identifierBinding;

@@ -12,6 +12,7 @@ namespace Sysmel
     typedef std::shared_ptr<class IntrinsicsEnvironment> IntrinsicsEnvironmentPtr;
     typedef std::shared_ptr<class LexicalEnvironment> LexicalEnvironmentPtr;
     typedef std::shared_ptr<class FunctionalAnalysisEnvironment> FunctionalAnalysisEnvironmentPtr;
+    typedef std::shared_ptr<class FunctionalActivationEnvironment> FunctionalActivationEnvironmentPtr;
     typedef std::shared_ptr<class Module> ModulePtr;
     typedef std::shared_ptr<class Namespace> NamespacePtr;
     typedef std::shared_ptr<class SymbolValueBinding> SymbolValueBindingPtr;
@@ -72,6 +73,18 @@ namespace Sysmel
             return parent->getFunctionalAnalysisEnvironment();
         }
 
+        virtual FunctionalActivationEnvironmentPtr getFunctionalActivationEnvironment()
+        {
+            auto parent = getParent();
+            return parent->getFunctionalActivationEnvironment();
+        }
+
+        virtual ValuePtr lookupValueForBinding(ValuePtr binding)
+        {
+            auto parent = getParent();
+            return parent->lookupValueForBinding(binding);
+        }
+
         virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol)
         {
             return getParent()->lookupSymbolRecursively(symbol);
@@ -93,8 +106,19 @@ namespace Sysmel
             return nullptr;
         }
 
-        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment()
+        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment() override
         {
+            return nullptr;
+        }
+
+        virtual FunctionalActivationEnvironmentPtr getFunctionalActivationEnvironment() override
+        {
+            return nullptr;
+        }
+
+        virtual ValuePtr lookupValueForBinding(ValuePtr binding) override
+        {
+            (void)binding;
             return nullptr;
         }
 
@@ -246,6 +270,37 @@ namespace Sysmel
 
         SourcePositionPtr sourcePosition;
         std::vector<ValuePtr> argumentBindings;
+    };
+
+    class FunctionalActivationEnvironment : public NonEmptyEnvironment
+    {
+    public:
+        FunctionalActivationEnvironment(const EnvironmentPtr &cparent, const SourcePositionPtr &csourcePosition)
+        {
+            parent = cparent;
+            sourcePosition = csourcePosition;
+        }
+
+        virtual FunctionalActivationEnvironmentPtr getFunctionalActivationEnvironment() override
+        {
+            return std::static_pointer_cast<FunctionalActivationEnvironment> (shared_from_this());
+        }
+
+        void forArgumentBindingSetValue(const SymbolArgumentBindingPtr &binding, ValuePtr value)
+        {
+            argumentBindings.insert(std::make_pair(binding, value));
+        }
+
+        virtual ValuePtr lookupValueForBinding(ValuePtr binding) override
+        {
+            auto it = argumentBindings.find(std::static_pointer_cast<SymbolArgumentBinding> (binding));
+            if(it != argumentBindings.end())
+                return it->second;
+            return nullptr;
+        }
+
+        SourcePositionPtr sourcePosition;
+        std::map<SymbolArgumentBindingPtr, ValuePtr> argumentBindings;
     };
 }
 #endif // SYSMEL_ENVIRONMENT_HPP

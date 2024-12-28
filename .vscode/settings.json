@@ -72,7 +72,11 @@
         "fstream": "cpp",
         "iomanip": "cpp",
         "filesystem": "cpp",
-        "__split_buffer": "cpp"
+        "__split_buffer": "cpp",
+        "__functional_base_03": "cpp",
+        "__hash_table": "cpp",
+        "__tree": "cpp",
+        "__tuple": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

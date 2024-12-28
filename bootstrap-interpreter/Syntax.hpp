@@ -1188,8 +1188,25 @@ namespace Sysmel
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
-            (void)environment;
-            abort();
+            auto analyzedFunctional = functional->analyzeInEnvironment(environment);
+            auto functionalType = analyzedFunctional->getType();
+            auto argumentAnalysisContext = functionalType->createArgumentTypeAnalysisContext();
+
+            std::vector<ValuePtr> analyzedArguments;
+            analyzedArguments.reserve(arguments.size());
+            for(size_t i = 0; i < arguments.size(); ++i)
+            {
+                auto argument = arguments[i];
+                auto analyzedArgument = argument->analyzeInEnvironment(environment);
+                auto coercedArgument = argumentAnalysisContext->coerceArgumentWithIndex(i, analyzedArgument);
+                analyzedArguments.push_back(analyzedArgument);
+            }
+
+            auto application = std::make_shared<SemanticApplication> ();
+            application->type = argumentAnalysisContext->getResultType();
+            application->functional = analyzedFunctional;
+            application->arguments.swap(analyzedArguments);
+            return application;
         }
 
         ValuePtr functional;

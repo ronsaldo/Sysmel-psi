@@ -32,6 +32,7 @@ AddClassWithSuperclass(Stdio, Object)
 
 AddClassWithSuperclass(SemanticValue, Object)
 AddClassWithSuperclass(SemanticValueSequence, SemanticValue)
+AddClassWithSuperclass(SemanticApplication, SemanticValue)
 AddClassWithSuperclass(SemanticMessageSend, SemanticValue)
 AddClassWithSuperclass(SemanticArgumentNode, SemanticValue)
 AddClassWithSuperclass(SemanticFunctionalValue, SemanticValue)

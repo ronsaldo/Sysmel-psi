@@ -25,6 +25,7 @@ typedef std::shared_ptr<class SourcePosition> SourcePositionPtr;
 typedef std::shared_ptr<class SyntaxError> SyntaxErrorPtr; 
 typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
 typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
+typedef std::shared_ptr<class ArgumentTypeAnalysisContext> ArgumentTypeAnalysisContextPtr;
 
 class Value : public std::enable_shared_from_this<Value>
 {
@@ -131,6 +132,8 @@ public:
         (void)function;
     }
 
+    virtual ArgumentTypeAnalysisContextPtr createArgumentTypeAnalysisContext();
+
     std::vector<SyntaxErrorPtr> collectSyntaxErrors()
     {
         std::vector<SyntaxErrorPtr> errors;
@@ -147,7 +150,26 @@ public:
     SourcePositionPtr sourcePosition;
 };
 
+class ArgumentTypeAnalysisContext : public Value
+{
+public:
+    virtual ValuePtr coerceArgumentWithIndex(size_t index, ValuePtr argument);
+    virtual ValuePtr getResultType();
+};
 
+class LambdaValue : public Value
+{
+public:
+    virtual void printStringOn(std::ostream &out) const;
+    virtual ValuePtr getType() const override;
+    virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments);
+
+    SymbolPtr name;
+    ValuePtr type;
+    EnvironmentPtr closure;
+    std::vector<SymbolArgumentBindingPtr> argumentBindings;
+    ValuePtr body; 
+};
 
 
 }

@@ -160,4 +160,53 @@ ValuePtr Value::getClass() const
     return nullptr;
 }
 
+ArgumentTypeAnalysisContextPtr Value::createArgumentTypeAnalysisContext()
+{
+    return std::make_shared<ArgumentTypeAnalysisContext> ();
+}
+
+ValuePtr ArgumentTypeAnalysisContext::coerceArgumentWithIndex(size_t index, ValuePtr argument)
+{
+    (void)index;
+    return argument;
+}
+
+ValuePtr ArgumentTypeAnalysisContext::getResultType()
+{
+    return GradualType::uniqueInstance();
+}
+
+void LambdaValue::printStringOn(std::ostream &out) const
+{
+    if(name)
+        name->printStringOn(out);
+    else
+        out << "a Lambda";
+}
+
+ValuePtr LambdaValue::getType() const
+{
+    return type;
+}
+
+ValuePtr LambdaValue::applyWithArguments(const std::vector<ValuePtr> &arguments)
+{
+    auto expectedArgumentCount = argumentBindings.size();
+    auto receivedArgumentCount = arguments.size();
+    if(expectedArgumentCount != receivedArgumentCount)
+        throwExceptionWithMessage("Lambda argument count mismatch.");
+
+    auto activationEnvironment = std::make_shared<FunctionalActivationEnvironment> (closure, sourcePosition);
+    for(size_t i = 0; i < argumentBindings.size(); ++i)
+    {
+        auto binding = argumentBindings[i];
+        auto argument = arguments[i];
+        activationEnvironment->forArgumentBindingSetValue(binding, argument);
+    }
+
+    auto lexicalEnvironment = std::make_shared<LexicalEnvironment> (activationEnvironment, sourcePosition);
+    auto result = body->evaluateInEnvironment(lexicalEnvironment);
+    return result;
+}
+
 } // End of namespace Sysmel
