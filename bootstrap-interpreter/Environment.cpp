@@ -1,18 +1,27 @@
 #include "Environment.hpp"
 #include "Assert.hpp"
 #include "Type.hpp"
+#include "Semantics.hpp"
 
 namespace Sysmel
 {
 
 ValuePtr SymbolValueBinding::analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment)
 {
+    (void)syntaxNode;
+    (void)environment;
     return analyzedValue;
 }
 
 ValuePtr SymbolArgumentBinding::analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment)
 {
-    abort();
+    (void)syntaxNode;
+    (void)environment;
+    auto semanticReference = std::make_shared<SemanticIdentifierReference> ();
+    semanticReference->sourcePosition =  sourcePosition;
+    semanticReference->type = type;
+    semanticReference->identifierBinding = shared_from_this();
+    return semanticReference;
 }
 
 ClassPtr IntrinsicsEnvironment::lookupValidClass(const std::string &name)

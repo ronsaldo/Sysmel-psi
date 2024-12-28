@@ -17,6 +17,7 @@ namespace Sysmel
 {
 
     typedef std::shared_ptr<class SyntaxMessageSend> SyntaxMessageSendPtr;
+    typedef std::shared_ptr<class SyntaxLambda> SyntaxLambdaPtr;
 
     class SyntacticValue : public Object
     {
@@ -66,7 +67,7 @@ namespace Sysmel
             }
 
             auto analyzedSequence = std::make_shared<SemanticValueSequence>();
-            analyzedSequence->type = elements.empty() ? UnitType::uniqueInstance() : analyzedElements.back()->getTypeOrClass();
+            analyzedSequence->type = elements.empty() ? UnitType::uniqueInstance() : analyzedElements.back()->getClassOrType();
             analyzedSequence->elements.swap(analyzedElements);
             return analyzedSequence;
         }
@@ -272,7 +273,7 @@ namespace Sysmel
             {
                 auto analyzedElement = expression->analyzeInEnvironment(environment);
                 analyzedElements.push_back(analyzedElement);
-                elementTypes.push_back(analyzedElement->getTypeOrClass());
+                elementTypes.push_back(analyzedElement->getClassOrType());
             }
 
             auto semanticTuple = std::make_shared<SemanticTuple>();
@@ -389,7 +390,62 @@ namespace Sysmel
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
-            abort();
+            auto functionalEnvironment = std::make_shared<FunctionalAnalysisEnvironment> (environment, sourcePosition);
+            std::vector<SymbolArgumentBindingPtr> analyzedArguments;
+            for (auto &argument : arguments)
+            {
+                auto analyzedArgument = argument->analyzeArgumentInEnvironment(functionalEnvironment);
+                analyzedArguments.push_back(analyzedArgument);
+            }
+
+            // Evaluate the result type.
+            ValuePtr analyzedResultType;
+            if(resultType)
+                analyzedResultType = resultType->analyzeInEnvironment(functionalEnvironment);
+
+            // Do we have a name?
+            SymbolPtr name;
+            if(nameExpression)
+                name = nameExpression->asAnalyzedSymbolValue();
+
+            // Analyze the body
+            auto bodyEnvironment = std::make_shared<LexicalEnvironment> (functionalEnvironment, sourcePosition);
+            auto analyzedBody = body->analyzeInEnvironment(bodyEnvironment);
+
+            // Body coercion
+            if(analyzedResultType)
+            {
+                analyzedBody = analyzedBody->coerceIntoExpectedTypeAt(analyzedResultType, sourcePosition);
+            }
+            else //if(!analyzedResultType)
+            {
+                // Infer the result type from the body.
+                analyzedResultType = analyzedBody->getClassOrType();
+                if(!analyzedResultType)
+                    analyzedResultType = GradualType::uniqueInstance();
+
+                auto literal = std::make_shared<SemanticLiteralValue> ();
+                literal->value = analyzedResultType;
+                analyzedResultType = literal;
+            }
+
+            // Construct the Pi type of the lambda.
+            auto semanticPi = std::make_shared<SemanticPi> ();
+            semanticPi->sourcePosition = sourcePosition;
+            semanticPi->closure = environment;
+            semanticPi->argumentBindings = analyzedArguments;
+            semanticPi->isVariadic = isVariadic;
+            semanticPi->body = analyzedResultType;
+
+            auto semanticLambda = std::make_shared<SemanticLambda> ();
+            semanticLambda->sourcePosition = sourcePosition;
+            semanticLambda->closure = environment;
+            semanticLambda->type = semanticPi;
+            semanticLambda->argumentBindings = analyzedArguments;
+            semanticLambda->isVariadic = isVariadic;
+            semanticLambda->body = analyzedBody;
+
+            return semanticLambda;
         }
 
         ValuePtr nameExpression;
@@ -433,7 +489,7 @@ namespace Sysmel
             }
 
             ValuePtr analyzedBody;
-            if(body)
+            if(!body)
             {
                 auto literal = std::make_shared<SemanticLiteralValue> ();
                 literal->value = GradualType::uniqueInstance();
@@ -445,6 +501,7 @@ namespace Sysmel
             }
 
             auto semanticPi = std::make_shared<SemanticPi> ();
+            semanticPi->closure = environment;
             semanticPi->argumentBindings.swap(analyzedArguments);
             semanticPi->isVariadic = isVariadic;
             semanticPi->body = analyzedBody;
@@ -481,6 +538,8 @@ namespace Sysmel
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
+            // TODO: Implement this.
+            (void)environment;
             abort();
         }
 
@@ -554,6 +613,34 @@ namespace Sysmel
             }
         }
 
+        SyntaxLambdaPtr constructLambdaWithBody(const ValuePtr &nameExpression, const ValuePtr &body, bool isFixpoint)
+        {
+            auto bodyOrInnerLambda = body;
+            if (this->resultType->isFunctionalDependentTypeNode())
+            {
+                auto resultDependentType = std::static_pointer_cast<SyntaxFunctionalDependentType> (this->resultType);
+                bodyOrInnerLambda = resultDependentType->constructLambdaWithBody(nullptr, body, false);
+            }
+
+            std::vector<ValuePtr> arguments;
+            bool isExistential = false;
+            bool isVariadic = false;
+
+            if (argumentPattern)
+                argumentPattern->parseAndUnpackArgumentsPattern(arguments, isExistential, isVariadic);
+
+            auto lambda = std::make_shared<SyntaxLambda> ();
+            lambda->sourcePosition = sourcePosition;
+            lambda->nameExpression = nameExpression;
+            lambda->arguments = arguments;
+            lambda->isVariadic = isVariadic;
+            lambda->resultType = resultType;
+            lambda->body = bodyOrInnerLambda;
+            lambda->callingConvention = callingConvention;
+            lambda->isFixpoint = isFixpoint;
+            return lambda;
+        }
+
         ValuePtr argumentPattern;
         ValuePtr resultType;
         SymbolPtr callingConvention;
@@ -581,7 +668,11 @@ namespace Sysmel
     
         ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
-            abort();
+            if(!functionalType)
+                throwExceptionWithMessage("Expected a functional dependent type.");
+            
+            auto lambdaNode = functionalType->constructLambdaWithBody(nameExpression, body, isFixpoint);
+            return lambdaNode->analyzeInEnvironment(environment);
         }
     };
 

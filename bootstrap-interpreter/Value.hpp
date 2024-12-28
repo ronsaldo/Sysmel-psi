@@ -31,6 +31,7 @@ class Value : public std::enable_shared_from_this<Value>
 public:
     virtual ValuePtr getType() const;
     virtual ValuePtr getClass() const;
+    virtual ValuePtr getClassOrType() const;
     virtual ValuePtr getTypeOrClass() const;
 
     virtual ValuePtr performWithArguments(const ValuePtr &selector, const std::vector<ValuePtr> &arguments);
@@ -95,7 +96,7 @@ public:
         std::ostringstream out;
         value->printStringOn(out);
         out << " is not a valid pattern expression.";
-        throwExceptionWithMessageAt(out.str().c_str(), sourcePosition);
+        throwExceptionWithMessageAt(out.str().c_str(), position);
     }
 
     virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const

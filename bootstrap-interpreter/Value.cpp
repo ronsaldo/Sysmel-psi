@@ -12,6 +12,11 @@ ValuePtr Value::getType() const
     return GradualType::uniqueInstance();
 }
 
+ValuePtr Value::getClassOrType() const
+{
+    return getType();
+}
+
 ValuePtr Value::getTypeOrClass() const
 {
     return getType();

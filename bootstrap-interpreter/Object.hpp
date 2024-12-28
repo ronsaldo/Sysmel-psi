@@ -32,6 +32,11 @@ namespace Sysmel
 
         virtual ValuePtr getClass() const override;
 
+        ValuePtr getClassOrType() const override
+        {
+            return getClass();
+        }
+
         ValuePtr getTypeOrClass() const override
         {
             return getClass();

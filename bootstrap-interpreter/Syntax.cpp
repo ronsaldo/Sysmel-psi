@@ -45,10 +45,12 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
 
     auto analyzedMessage = std::make_shared<SemanticMessageSend> ();
     analyzedMessage->sourcePosition = sourcePosition;
-    analyzedMessage->type = GradualType::uniqueInstance();
     analyzedMessage->receiver = analyzedReceiver;
     analyzedMessage->selector = analyzedSelectorSymbol;
     analyzedMessage->arguments.swap(analyzedArguments);
+
+
+    analyzedMessage->type = GradualType::uniqueInstance();
 
     return analyzedMessage;
 }
@@ -90,7 +92,11 @@ ValuePtr SyntaxAssignment::analyzeInEnvironment(const EnvironmentPtr &environmen
     auto expandedStore = store->analyzeInEnvironmentForMacroExpansionOnly(environment);
     if (expandedStore->isFunctionalDependentTypeNode())
     {
-        abort();
+        auto function = std::make_shared<SyntaxFunction> ();
+        function->sourcePosition = sourcePosition;
+        function->functionalType = std::static_pointer_cast<SyntaxFunctionalDependentType> (expandedStore);
+        function->body = value;
+        return function->analyzeInEnvironment(environment);
     } 
     else if (expandedStore->isBindableName())
     {

@@ -29,3 +29,19 @@ AddClassWithSuperclass(BinaryStream, AbstractBinaryStream)
 AddClassWithSuperclass(BinaryFileStream, BinaryStream)
 
 AddClassWithSuperclass(Stdio, Object)
+
+AddClassWithSuperclass(SemanticValue, Object)
+AddClassWithSuperclass(SemanticValueSequence, SemanticValue)
+AddClassWithSuperclass(SemanticMessageSend, SemanticValue)
+AddClassWithSuperclass(SemanticArgumentNode, SemanticValue)
+AddClassWithSuperclass(SemanticFunctionalValue, SemanticValue)
+AddClassWithSuperclass(SemanticLambda, SemanticFunctionalValue)
+AddClassWithSuperclass(SemanticPi, SemanticFunctionalValue)
+AddClassWithSuperclass(SemanticSigma, SemanticFunctionalValue)
+AddClassWithSuperclass(SemanticLiteralValue, SemanticValue)
+AddClassWithSuperclass(SemanticArray, SemanticValue)
+AddClassWithSuperclass(SemanticTuple, SemanticValue)
+AddClassWithSuperclass(SemanticByteArray, SemanticValue)
+AddClassWithSuperclass(SemanticIdentifierReference, SemanticValue)
+
+

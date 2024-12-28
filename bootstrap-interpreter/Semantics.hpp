@@ -11,16 +11,26 @@ namespace Sysmel
 class SemanticValue : public Object
 {
 public:
+    virtual const char *getClassName() const { return "SemanticValue"; }
+    
     virtual bool isSemanticValue() const override { return true;}
     virtual void printStringOn(std::ostream &out) const override {out << "SemanticValue";}
     virtual ValuePtr getType() const override {return type;}
-
+    virtual ValuePtr getTypeOrClass() const override
+    {
+        if(type)
+            return type;
+        return getClass();
+    }
+    
     ValuePtr type;
 };
 
 class SemanticValueSequence : public SemanticValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticValueSequence"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticValueSequence(";
@@ -56,6 +66,8 @@ public:
 class SemanticMessageSend : public SemanticValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticMessageSend"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "MessageSend(";
@@ -116,6 +128,8 @@ public:
 class SemanticArgumentNode : public SemanticValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticArgumentNode"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticArgumentNode(";
@@ -124,6 +138,7 @@ public:
 
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
+        (void)environment;
         abort();
     }
 
@@ -135,6 +150,8 @@ public:
 class SemanticFunctionalValue : public SemanticValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticFunctionalValue"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticFunctionalValue(";
@@ -143,10 +160,12 @@ public:
 
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
+        (void)environment;
         abort();
     }
 
     SymbolPtr name;
+    EnvironmentPtr closure;
     std::vector<SymbolArgumentBindingPtr> argumentBindings;
     bool isVariadic = false;
     std::vector<SymbolCaptureBindingPtr> captureBindings;
@@ -156,6 +175,8 @@ public:
 class SemanticLambda : public SemanticFunctionalValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticLambda"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticLambda(";
@@ -171,6 +192,8 @@ public:
 class SemanticPi : public SemanticFunctionalValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticPi"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticPiValue(";
@@ -179,6 +202,7 @@ public:
 
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
+        (void)environment;
         auto pi = std::make_shared<PiType> ();
         pi->nameExpression = name;
         pi->arguments = argumentBindings;
@@ -190,6 +214,8 @@ public:
 class SemanticSigma : public SemanticFunctionalValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticSigma"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticSigma(";
@@ -198,6 +224,8 @@ public:
 
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
+        // TODO: Implement this
+        (void)environment;
         abort();
     }
 };
@@ -205,6 +233,8 @@ public:
 class SemanticLiteralValue : public SemanticValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticLiteralValue"; }
+
     virtual void printStringOn(std::ostream &out) const override {
         out << "SemanticLiteralValue(";
         value->printStringOn(out);
@@ -219,6 +249,11 @@ public:
     virtual ValuePtr getClass() const override
     {
         return value->getClass();
+    }
+
+    virtual ValuePtr getClassOrType() const override
+    {
+        return value->getClassOrType();
     }
 
     virtual ValuePtr getTypeOrClass() const override
@@ -243,6 +278,8 @@ public:
 class SemanticArray : public SemanticValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticArray"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticArray(";
@@ -278,6 +315,8 @@ public:
 class SemanticTuple : public SemanticValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticTuple"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticTuple(";
@@ -314,6 +353,8 @@ public:
 class SemanticByteArray : public SemanticValue
 {
 public:
+    virtual const char *getClassName() const { return "SemanticByteArray"; }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticByteArray(";
@@ -346,6 +387,25 @@ public:
     std::vector<ValuePtr> byteExpressions;
 };
 
+class SemanticIdentifierReference : public SemanticValue
+{
+public:
+    virtual const char *getClassName() const { return "SemanticIdentifierReference"; }
+
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticIdentifierReference(";
+        identifierBinding->printStringOn(out);
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        abort();
+    }
+
+    ValuePtr identifierBinding;
+};
 } // End of namespace Sysmel
 
 #endif //SYSMEL_SEMANTICS_HPP

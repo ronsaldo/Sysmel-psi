@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bootstrap-interpreter",
-            "args": ["-ep", ":(Integer)x :: Integer"],
+            "args": ["-ep", "(:(Integer)a :: Integer) := a"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
