@@ -811,6 +811,7 @@ namespace Sysmel
             functionalType->sourcePosition = state.sourcePositionFrom(startPosition);
             functionalType->argumentPattern = argumentPatternOrExpression;
             functionalType->resultType = resultTypeExpression;
+            return functionalType;
         }
 
         return argumentPatternOrExpression;

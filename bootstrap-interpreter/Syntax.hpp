@@ -151,10 +151,19 @@ namespace Sysmel
             }
         }
 
+        virtual ValuePtr expandBindingOfValueWithAt(const ValuePtr &value, const SourcePositionPtr &position) override
+        {
+            auto binding = std::make_shared<SyntaxBindingDefinition> ();
+            binding->nameExpression;
+            binding->expectedTypeExpression;
+            binding->initialValueExpression;
+            binding->isMutable = this->isMutable;
+        }
+
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
             (void)environment;
-            abort();
+            throwExceptionWithMessage("Cannot analyze BindableName directly");
         }
 
         ValuePtr typeExpression;
@@ -311,6 +320,11 @@ namespace Sysmel
     class SyntaxFunctionalDependentType : public SyntacticValue
     {
     public:
+        virtual bool isFunctionalDependentTypeNode() const override
+        {
+            return true;
+        }
+
         virtual void printStringOn(std::ostream &out) const override
         {
             out << "SyntaxFunctionalDependentType(";
@@ -346,6 +360,46 @@ namespace Sysmel
 
     typedef std::shared_ptr<SyntaxFunctionalDependentType> SyntaxFunctionalDependentTypePtr;
 
+    class SyntaxFunction : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxFunction(";
+            nameExpression->printStringOn(out);
+            out << "(";
+            functionalType->printStringOn(out);
+            out << ") := ";
+            body->printStringOn(out);
+        }
+
+        ValuePtr nameExpression;
+        SyntaxFunctionalDependentTypePtr functionalType;
+        ValuePtr body;
+        bool isFixpoint = false;
+    
+        ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            abort();
+        }
+    };
+
+    class SyntaxBindingDefinition : public SyntacticValue
+    {
+    public:
+        ValuePtr nameExpression;
+        ValuePtr expectedTypeExpression;
+        ValuePtr initialValueExpression;
+        bool     isMutable;
+        bool     isPublic;
+        bool     isRebind;
+
+        ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            abort();
+        }
+    };
+
     class SyntaxAssignment : public SyntacticValue
     {
     public:
@@ -372,32 +426,7 @@ namespace Sysmel
             }
         }
 
-        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
-        {
-            auto analyzedValue = value->analyzeInEnvironment(environment);
-            auto expandedStore = store->analyzeInEnvironmentForMacroExpansionOnly(environment);
-            if (expandedStore->isBindableName())
-            {
-                // printf("analyzedValue: %s\n", analyzedValue->printString().c_str());
-
-                auto bindableName = std::static_pointer_cast<SyntaxBindableName>(expandedStore);
-                auto name = bindableName->nameExpression->analyzeAndEvaluateInEnvironment(environment);
-                // printf("name: %s\n", name->asAnalyzedSymbolValue()->printString().c_str());
-                if (bindableName->typeExpression)
-                {
-                    auto expectedType = bindableName->typeExpression->analyzeAndEvaluateInEnvironment(environment);
-                    analyzedValue = analyzedValue->coerceIntoExpectedTypeAt(expectedType, getSourcePosition());
-                }
-
-                environment->addLocalSymbolBinding(name->asAnalyzedSymbolValue(), analyzedValue);
-                return analyzedValue;
-            }
-            else
-            {
-                auto analyzedStore = store->analyzeInEnvironment(environment);
-                abort();
-            }
-        }
+        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override;
 
         ValuePtr store;
         ValuePtr value;
@@ -422,12 +451,14 @@ namespace Sysmel
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
-            (void)environment;
-            abort();
+            auto analyzedValue = value->analyzeInEnvironment(environment);
+            auto expandedNode = pattern->expandBindingOfValueWithAt(analyzedValue, sourcePosition);
+            return expandedNode;
         }
 
         ValuePtr pattern;
         ValuePtr value;
+        bool allowsRebind = false;
     };
 
     class SyntaxBlock : public SyntacticValue

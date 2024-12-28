@@ -84,4 +84,52 @@ SyntaxMessageSendPtr SyntaxMessageCascadeMessage::asMessageSendWithReceiver(cons
     messageSend->arguments = arguments;
     return messageSend;
 }
+
+ValuePtr SyntaxAssignment::analyzeInEnvironment(const EnvironmentPtr &environment)
+{
+    auto expandedStore = store->analyzeInEnvironmentForMacroExpansionOnly(environment);
+    if (expandedStore->isFunctionalDependentTypeNode())
+    {
+        abort();
+    } 
+    else if (expandedStore->isBindableName())
+    {
+        auto bindableName = std::static_pointer_cast<SyntaxBindableName>(expandedStore);
+        if(bindableName->typeExpression)
+            printf("typeExpression %s, isFunctional %d\n", bindableName->typeExpression->printString().c_str(), bindableName->typeExpression->isFunctionalDependentTypeNode());
+
+        if(bindableName->typeExpression && bindableName->typeExpression->isFunctionalDependentTypeNode())
+        {
+            auto function = std::make_shared<SyntaxFunction> ();
+            function->sourcePosition = sourcePosition;
+            function->nameExpression = bindableName->nameExpression;
+            function->functionalType = std::static_pointer_cast<SyntaxFunctionalDependentType> (bindableName->typeExpression);
+            function->body = value;
+            function->isFixpoint = bindableName->hasPostTypeExpression;
+
+            auto bindingDefinition = std::make_shared<SyntaxBindingDefinition> ();
+            bindingDefinition->nameExpression = bindableName->nameExpression;
+            bindingDefinition->expectedTypeExpression = nullptr;
+            bindingDefinition->initialValueExpression = function;
+            bindingDefinition->isMutable = bindableName->isMutable;
+            bindingDefinition->isPublic = false;
+            bindingDefinition->isRebind = false;
+            return bindingDefinition->analyzeInEnvironment(environment);
+        }
+        else
+        {
+            auto bindPattern = std::make_shared<SyntaxBindPattern> ();
+            bindPattern->sourcePosition = sourcePosition;
+            bindPattern->pattern = expandedStore;
+            bindPattern->value = value;
+            bindPattern->allowsRebind = false;
+            return bindPattern->analyzeInEnvironment(environment);
+        }
+    }
+    else
+    {
+        auto analyzedStore = store->analyzeInEnvironment(environment);
+        abort();
+    }
+}
 }

@@ -48,6 +48,7 @@ public:
     virtual bool isSyntaxError() const { return false; }
     virtual bool isBindableName() const { return false; }
     virtual bool isNil() const { return false; };
+    virtual bool isFunctionalDependentTypeNode() const { return false; }
 
     virtual SymbolPtr asAnalyzedSymbolValue() { return nullptr; } 
 
@@ -83,6 +84,11 @@ public:
         (void)index;
         (void)value;
         throwExceptionWithMessage("Object is not a container of indexed values.");
+    }
+
+    virtual ValuePtr expandBindingOfValueWithAt(const ValuePtr &value, const SourcePositionPtr &position)
+    {
+        throwExceptionWithMessageAt("Not a valid pattern expression.", sourcePosition);
     }
 
     virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const
