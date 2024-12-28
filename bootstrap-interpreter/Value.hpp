@@ -52,7 +52,7 @@ public:
     virtual bool isBindableName() const { return false; }
     virtual bool isNil() const { return false; };
     virtual bool isFunctionalDependentTypeNode() const { return false; }
-
+    virtual bool isGradualType() const { return false; }
     virtual SymbolPtr asAnalyzedSymbolValue() { return nullptr; } 
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment);

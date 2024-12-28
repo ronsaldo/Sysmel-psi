@@ -144,7 +144,7 @@ bool Value::isSubtypeOf(const ValuePtr &targetSupertype)
 ValuePtr Value::coerceIntoExpectedTypeAt(const ValuePtr &targetType, const SourcePositionPtr &coercionLocation)
 {
     auto myType = getTypeOrClass();
-    if(myType == targetType)
+    if(myType == targetType || myType->isGradualType() || targetType->isGradualType())
         return shared_from_this();
 
     if(!targetType->isSatisfiedByType(myType))

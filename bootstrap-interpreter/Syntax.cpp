@@ -101,9 +101,6 @@ ValuePtr SyntaxAssignment::analyzeInEnvironment(const EnvironmentPtr &environmen
     else if (expandedStore->isBindableName())
     {
         auto bindableName = std::static_pointer_cast<SyntaxBindableName>(expandedStore);
-        if(bindableName->typeExpression)
-            printf("typeExpression %s, isFunctional %d\n", bindableName->typeExpression->printString().c_str(), bindableName->typeExpression->isFunctionalDependentTypeNode());
-
         if(bindableName->typeExpression && bindableName->typeExpression->isFunctionalDependentTypeNode())
         {
             auto function = std::make_shared<SyntaxFunction> ();

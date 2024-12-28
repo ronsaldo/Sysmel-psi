@@ -137,6 +137,7 @@ class GradualType : public BasicType
 {
 public:
     virtual bool isType() const override { return true; }
+    virtual bool isGradualType() const {return true;}
     virtual ValuePtr getType();
 
     virtual void printStringOn(std::ostream &out) const override
