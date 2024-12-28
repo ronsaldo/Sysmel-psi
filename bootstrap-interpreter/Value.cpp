@@ -76,6 +76,12 @@ ValuePtr Value::analyzeInEnvironment(const EnvironmentPtr &environment)
     return shared_from_this();
 }
 
+SymbolArgumentBindingPtr Value::analyzeArgumentInEnvironment(const EnvironmentPtr &environment)
+{
+    (void)environment;
+    throwExceptionWithMessage("Node is not an argument");
+}
+
 ValuePtr Value::analyzeInEnvironmentForMacroExpansionOnly(const EnvironmentPtr &environment)
 {
     (void)environment;

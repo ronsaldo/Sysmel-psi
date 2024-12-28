@@ -15,6 +15,8 @@ namespace Sysmel
     typedef std::shared_ptr<class Module> ModulePtr;
     typedef std::shared_ptr<class Namespace> NamespacePtr;
     typedef std::shared_ptr<class SymbolValueBinding> SymbolValueBindingPtr;
+    typedef std::shared_ptr<class SymbolCaptureBinding> SymbolCaptureBindingPtr;
+    typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
 
     class SymbolValueBinding : public Value
     {
@@ -25,6 +27,28 @@ namespace Sysmel
         virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
     };
     
+    class SymbolArgumentBinding : public Value
+    {
+    public:
+        SymbolPtr name;
+        ValuePtr type;
+        bool isImplicit = false;
+        bool isExistential = false;
+
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            if(name)
+                name->printStringOn(out);
+
+            if(type && name)
+                out << " : ";
+            if(type)
+                type->printStringOn(out);
+        }
+
+        virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
+    };
+
     class Environment : public Object
     {
     public:
@@ -42,7 +66,7 @@ namespace Sysmel
             return parent->getNamespace();
         }
 
-        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment() const
+        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment()
         {
             auto parent = getParent();
             return parent->getFunctionalAnalysisEnvironment();
@@ -69,7 +93,7 @@ namespace Sysmel
             return nullptr;
         }
 
-        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment() const
+        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment()
         {
             return nullptr;
         }
@@ -207,12 +231,21 @@ namespace Sysmel
             sourcePosition = csourcePosition;
         }
 
-        FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment()
+        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment() override
         {
             return std::static_pointer_cast<FunctionalAnalysisEnvironment> (shared_from_this());
         }
 
+        void addArgumentBinding(const SymbolArgumentBindingPtr &analyzedArgument)
+        {
+            auto name = analyzedArgument->name;
+            if(name)
+                addLocalSymbolBinding(name, analyzedArgument);
+            argumentBindings.push_back(analyzedArgument);
+        }
+
         SourcePositionPtr sourcePosition;
+        std::vector<ValuePtr> argumentBindings;
     };
 }
 #endif // SYSMEL_ENVIRONMENT_HPP

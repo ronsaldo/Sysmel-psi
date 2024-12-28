@@ -240,6 +240,15 @@ private:
     static std::map<std::vector<ValuePtr>, SumTypePtr> SumTypeCache;
 };
 
+class PiType : public TypeBehavior
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override;
+
+    ValuePtr nameExpression;
+    std::vector<SymbolArgumentBindingPtr> arguments;
+    ValuePtr resultType;
+};
 
 }// End of namespace Sysmel
 

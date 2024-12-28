@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Object.hpp"
+#include "Environment.hpp"
 
 namespace Sysmel
 {
@@ -110,6 +111,95 @@ public:
     ValuePtr receiver;
     ValuePtr selector;
     std::vector<ValuePtr> arguments;
+};
+
+class SemanticArgumentNode : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticArgumentNode(";
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        abort();
+    }
+
+    SymbolArgumentBindingPtr binding;
+    bool isImplicit = false;
+    bool isExistential = false;
+};
+
+class SemanticFunctionalValue : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticFunctionalValue(";
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        abort();
+    }
+
+    SymbolPtr name;
+    std::vector<SymbolArgumentBindingPtr> argumentBindings;
+    bool isVariadic = false;
+    std::vector<SymbolCaptureBindingPtr> captureBindings;
+    ValuePtr body;
+};
+
+class SemanticLambda : public SemanticFunctionalValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticLambda(";
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        abort();
+    }
+};
+
+class SemanticPi : public SemanticFunctionalValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticPiValue(";
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto pi = std::make_shared<PiType> ();
+        pi->nameExpression = name;
+        pi->arguments = argumentBindings;
+        pi->resultType = body;
+        return pi;
+    }
+};
+
+class SemanticSigma : public SemanticFunctionalValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticSigma(";
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        abort();
+    }
 };
 
 class SemanticLiteralValue : public SemanticValue

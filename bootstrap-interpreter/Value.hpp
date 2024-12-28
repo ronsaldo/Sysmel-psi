@@ -24,6 +24,7 @@ typedef std::shared_ptr<class SyntacticValue> SyntacticValuePtr;
 typedef std::shared_ptr<class SourcePosition> SourcePositionPtr; 
 typedef std::shared_ptr<class SyntaxError> SyntaxErrorPtr; 
 typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
+typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
 
 class Value : public std::enable_shared_from_this<Value>
 {
@@ -54,6 +55,7 @@ public:
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment);
     virtual ValuePtr analyzeInEnvironmentForMacroExpansionOnly(const EnvironmentPtr &environment);
+    virtual SymbolArgumentBindingPtr analyzeArgumentInEnvironment(const EnvironmentPtr &environment);
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment);
     virtual ValuePtr analyzeAndEvaluateInEnvironment(const EnvironmentPtr &environment);
     virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);

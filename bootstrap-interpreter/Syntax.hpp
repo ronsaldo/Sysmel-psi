@@ -167,6 +167,31 @@ namespace Sysmel
             throwExceptionWithMessage("Cannot analyze BindableName directly");
         }
 
+
+        SymbolArgumentBindingPtr analyzeArgumentInEnvironment(const EnvironmentPtr &environment)
+        {
+            auto functionalAnalysisEnv = environment->getFunctionalAnalysisEnvironment();
+            if(!functionalAnalysisEnv)
+                throwExceptionWithMessage("Argument bindings must be a part of a function");
+
+            SymbolPtr name;
+            if(nameExpression)
+                name = nameExpression->analyzeInEnvironment(environment)->asAnalyzedSymbolValue();
+            ValuePtr type;
+            if(typeExpression)
+                type = typeExpression->analyzeInEnvironment(environment);
+            
+
+            auto binding = std::make_shared<SymbolArgumentBinding> ();
+            binding->sourcePosition = sourcePosition;
+            binding->name = name;
+            binding->type = type;
+            binding->isExistential = isExistential;
+            binding->isImplicit = isImplicit;
+            functionalAnalysisEnv->addArgumentBinding(binding);
+            return binding;
+        }
+
         ValuePtr typeExpression;
         ValuePtr nameExpression;
         bool isImplicit = false;
@@ -255,6 +280,23 @@ namespace Sysmel
             semanticTuple->type = ProductType::getOrCreateWithElementTypes(elementTypes);
             semanticTuple->expressions = analyzedElements;
             return semanticTuple;
+        }
+
+        bool parseAndUnpackArgumentsPattern(std::vector<ValuePtr> &argumentNodes, bool &isExistential, bool &isVariadic)
+        {
+            for(auto &element : elements)
+            {
+                if(!element->isBindableName())
+                    throwExceptionWithMessageAt("Expected a bindable name", element->getSourcePosition());
+                
+                auto bindableElement = std::static_pointer_cast<SyntaxBindableName> (element);
+                argumentNodes.push_back(bindableElement);
+
+                isExistential = isExistential || bindableElement->isExistential;
+                isVariadic = isVariadic || bindableElement->isVariadic;
+            }
+
+            return true;
         }
 
         std::vector<ValuePtr> elements;
@@ -370,10 +412,10 @@ namespace Sysmel
                 nameExpression->printStringOn(out);
             if (isVariadic)
                 out << ", ...";
-            if (resultType)
+            if (body)
             {
                 out << " :: ";
-                resultType->printStringOn(out);
+                body->printStringOn(out);
             }
             if (callingConvention)
                 callingConvention->printStringOn(out);
@@ -382,13 +424,37 @@ namespace Sysmel
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
-            abort();
+            auto functionalEnvironment = std::make_shared<FunctionalAnalysisEnvironment> (environment, sourcePosition);
+            std::vector<SymbolArgumentBindingPtr> analyzedArguments;
+            for (auto &argument : arguments)
+            {
+                auto analyzedArgument = argument->analyzeArgumentInEnvironment(functionalEnvironment);
+                analyzedArguments.push_back(analyzedArgument);
+            }
+
+            ValuePtr analyzedBody;
+            if(body)
+            {
+                auto literal = std::make_shared<SemanticLiteralValue> ();
+                literal->value = GradualType::uniqueInstance();
+                analyzedBody = literal;
+            }
+            else
+            {
+                analyzedBody = body->analyzeInEnvironment(functionalEnvironment);
+            }
+
+            auto semanticPi = std::make_shared<SemanticPi> ();
+            semanticPi->argumentBindings.swap(analyzedArguments);
+            semanticPi->isVariadic = isVariadic;
+            semanticPi->body = analyzedBody;
+            return semanticPi;
         }
 
         ValuePtr nameExpression;
         std::vector<ValuePtr> arguments;
         bool isVariadic;
-        ValuePtr resultType;
+        ValuePtr body;
         ValuePtr callingConvention;
         bool isFixpoint;
     };
@@ -459,7 +525,7 @@ namespace Sysmel
             {
                 auto pi = std::make_shared<SyntaxPi> ();
                 pi->isVariadic = false;
-                pi->resultType = resultType;
+                pi->body = resultType;
                 pi->callingConvention = callingConvention;
                 return pi->analyzeInEnvironment(environment);
             }
@@ -482,7 +548,7 @@ namespace Sysmel
                 pi->sourcePosition = sourcePosition;
                 pi->arguments = argumentNodes;
                 pi->isVariadic = isVariadic;
-                pi->resultType = resultType;
+                pi->body = resultType;
                 pi->callingConvention = callingConvention;
                 return pi->analyzeInEnvironment(environment);
             }

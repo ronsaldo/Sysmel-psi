@@ -1,4 +1,5 @@
 #include "Type.hpp"
+#include "Environment.hpp"
 
 namespace Sysmel
 {
@@ -120,4 +121,20 @@ SumTypePtr SumType::getOrCreateWithAlternativeTypes(const std::vector<ValuePtr> 
 
 std::map<std::vector<ValuePtr>, SumTypePtr> SumType::SumTypeCache;
 
+void PiType::printStringOn(std::ostream &out) const
+{
+    out << "Pi(";
+    bool isFirst = true;
+    for(auto &argument : arguments)
+    {
+        if(isFirst)
+            isFirst = false;
+        else
+            out << ", ";
+        argument->printStringOn(out);
+    }
+    out << "): ";
+    if(resultType)
+        resultType->printStringOn(out);
+}
 } //end of namespace Sysmel

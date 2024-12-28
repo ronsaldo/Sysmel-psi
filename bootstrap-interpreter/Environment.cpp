@@ -10,6 +10,11 @@ ValuePtr SymbolValueBinding::analyzeIdentifierReferenceInEnvironment(const Value
     return analyzedValue;
 }
 
+ValuePtr SymbolArgumentBinding::analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment)
+{
+    abort();
+}
+
 ClassPtr IntrinsicsEnvironment::lookupValidClass(const std::string &name)
 {
     auto it = intrinsicClasses.find(name);
