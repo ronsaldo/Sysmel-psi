@@ -1,0 +1,7 @@
+:factorial(:(Integer)n :: Integer) := {
+    if: n <= 0
+    then: 0
+    else: factorial(n-1)*n
+}.
+
+Stdio stdout nextPutAll: factorial(10) printString; nextPut: '\n'

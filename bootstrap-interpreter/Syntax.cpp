@@ -29,8 +29,15 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
     auto analyzedSelectorSymbol = analyzedSelector->asAnalyzedSymbolValue();
     if(!receiver && analyzedSelectorSymbol)
     {
-        auto functional = environment->lookupSymbolRecursively(analyzedSelectorSymbol);
-        abort();
+        auto functionalIdentifier = std::make_shared<SyntaxIdentifierReference> ();
+        functionalIdentifier->sourcePosition = analyzedSelector->sourcePosition;
+        functionalIdentifier->value = analyzedSelectorSymbol->value;
+        
+        auto functionApplication = std::make_shared<SyntaxApplication> ();
+        functionApplication->functional = functionalIdentifier;
+        functionApplication->sourcePosition = sourcePosition;
+        functionApplication->arguments = arguments;
+        return functionApplication->analyzeInEnvironment(environment);
     }
     
     auto analyzedReceiver = receiver->analyzeInEnvironment(environment);
