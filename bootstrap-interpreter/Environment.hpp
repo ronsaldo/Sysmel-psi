@@ -11,9 +11,20 @@ namespace Sysmel
     typedef std::shared_ptr<Environment> EnvironmentPtr;
     typedef std::shared_ptr<class IntrinsicsEnvironment> IntrinsicsEnvironmentPtr;
     typedef std::shared_ptr<class LexicalEnvironment> LexicalEnvironmentPtr;
+    typedef std::shared_ptr<class FunctionalAnalysisEnvironment> FunctionalAnalysisEnvironmentPtr;
     typedef std::shared_ptr<class Module> ModulePtr;
     typedef std::shared_ptr<class Namespace> NamespacePtr;
+    typedef std::shared_ptr<class SymbolValueBinding> SymbolValueBindingPtr;
 
+    class SymbolValueBinding : public Value
+    {
+    public:
+        SymbolPtr name;
+        ValuePtr analyzedValue;
+
+        virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
+    };
+    
     class Environment : public Object
     {
     public:
@@ -29,6 +40,12 @@ namespace Sysmel
         {
             auto parent = getParent();
             return parent->getNamespace();
+        }
+
+        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment() const
+        {
+            auto parent = getParent();
+            return parent->getFunctionalAnalysisEnvironment();
         }
 
         virtual ValuePtr lookupSymbolRecursively(SymbolPtr symbol)
@@ -48,6 +65,11 @@ namespace Sysmel
         }
 
         virtual ModulePtr getModule() const
+        {
+            return nullptr;
+        }
+
+        virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment() const
         {
             return nullptr;
         }
@@ -176,5 +198,21 @@ namespace Sysmel
         SourcePositionPtr sourcePosition;
     };
 
+    class FunctionalAnalysisEnvironment : public NonEmptyEnvironment
+    {
+    public:
+        FunctionalAnalysisEnvironment(const EnvironmentPtr &cparent, const SourcePositionPtr &csourcePosition)
+        {
+            parent = cparent;
+            sourcePosition = csourcePosition;
+        }
+
+        FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment()
+        {
+            return std::static_pointer_cast<FunctionalAnalysisEnvironment> (shared_from_this());
+        }
+
+        SourcePositionPtr sourcePosition;
+    };
 }
 #endif // SYSMEL_ENVIRONMENT_HPP

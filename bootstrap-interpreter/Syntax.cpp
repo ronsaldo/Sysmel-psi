@@ -132,4 +132,17 @@ ValuePtr SyntaxAssignment::analyzeInEnvironment(const EnvironmentPtr &environmen
         abort();
     }
 }
+
+ValuePtr SyntaxBindableName::expandBindingOfValueWithAt(const ValuePtr &value, const SourcePositionPtr &position)
+{
+    auto binding = std::make_shared<SyntaxBindingDefinition> ();
+    binding->sourcePosition = position;
+    binding->nameExpression = nameExpression;
+    binding->expectedTypeExpression = typeExpression;
+    binding->initialValueExpression = value;
+    binding->isMutable = this->isMutable;
+    binding->isPublic = this->isPublic;
+    return binding;
+}
+
 }

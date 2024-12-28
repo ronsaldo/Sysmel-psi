@@ -151,13 +151,14 @@ namespace Sysmel
             }
         }
 
-        virtual ValuePtr expandBindingOfValueWithAt(const ValuePtr &value, const SourcePositionPtr &position) override
+        virtual ValuePtr expandBindingOfValueWithAt(const ValuePtr &value, const SourcePositionPtr &position) override;
+
+        bool parseAndUnpackArgumentsPattern(std::vector<ValuePtr> &argumentNodes, bool &isExistential, bool &isVariadic)
         {
-            auto binding = std::make_shared<SyntaxBindingDefinition> ();
-            binding->nameExpression;
-            binding->expectedTypeExpression;
-            binding->initialValueExpression;
-            binding->isMutable = this->isMutable;
+            argumentNodes.push_back(shared_from_this());
+            isExistential = this->isExistential;
+            isVariadic = this->isVariadic;
+            return true;
         }
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
@@ -173,6 +174,7 @@ namespace Sysmel
         bool isVariadic = false;
         bool isMutable = false;
         bool hasPostTypeExpression = false;
+        bool isPublic = false;
     };
 
     class SyntaxDictionary : public SyntacticValue
@@ -317,6 +319,109 @@ namespace Sysmel
         std::string value;
     };
 
+    class SyntaxLambda : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxLambda(";
+            if (nameExpression)
+                nameExpression->printStringOn(out);
+            if (isVariadic)
+                out << ", ...";
+            if (resultType)
+            {
+                out << " :: ";
+                resultType->printStringOn(out);
+            }
+            if (callingConvention)
+                callingConvention->printStringOn(out);
+            if(isFixpoint)
+                out << " fixpoint";
+            
+            out << " := ";
+            body->printStringOn(out);
+
+            out << ')';
+        }
+
+        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            abort();
+        }
+
+        ValuePtr nameExpression;
+        std::vector<ValuePtr> arguments;
+        bool isVariadic;
+        ValuePtr resultType;
+        ValuePtr body;
+        ValuePtr callingConvention;
+        bool isFixpoint;
+
+    };
+
+    class SyntaxPi : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxPi(";
+            if (nameExpression)
+                nameExpression->printStringOn(out);
+            if (isVariadic)
+                out << ", ...";
+            if (resultType)
+            {
+                out << " :: ";
+                resultType->printStringOn(out);
+            }
+            if (callingConvention)
+                callingConvention->printStringOn(out);
+             out << ')';
+        }
+
+        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            abort();
+        }
+
+        ValuePtr nameExpression;
+        std::vector<ValuePtr> arguments;
+        bool isVariadic;
+        ValuePtr resultType;
+        ValuePtr callingConvention;
+        bool isFixpoint;
+    };
+
+    class SyntaxSigma : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxSigma(";
+            bool isFirst = true;
+            for(auto arg : arguments)
+            {
+                if(isFirst)
+                    isFirst = false;
+                else
+                    out << ", ";
+                arg->printStringOn(out);
+
+            }
+            body->printStringOn(out);
+            out << ')';
+        }
+
+        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            abort();
+        }
+
+        std::vector<ValuePtr> arguments;
+        ValuePtr body;
+    };
+
     class SyntaxFunctionalDependentType : public SyntacticValue
     {
     public:
@@ -350,12 +455,42 @@ namespace Sysmel
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
-            (void)environment;
-            abort();
+            if(!argumentPattern)
+            {
+                auto pi = std::make_shared<SyntaxPi> ();
+                pi->isVariadic = false;
+                pi->resultType = resultType;
+                pi->callingConvention = callingConvention;
+                return pi->analyzeInEnvironment(environment);
+            }
+
+            std::vector<ValuePtr> argumentNodes;
+            bool isExistential = false;
+            bool isVariadic = false;
+            argumentPattern->parseAndUnpackArgumentsPattern(argumentNodes, isExistential, isVariadic);
+
+            if(isExistential)
+            {
+                auto sigma = std::make_shared<SyntaxSigma> ();
+                sigma->sourcePosition = sourcePosition;
+                sigma->arguments = argumentNodes;
+                return sigma->analyzeInEnvironment(environment);
+            }
+            else
+            {
+                auto pi = std::make_shared<SyntaxPi> ();
+                pi->sourcePosition = sourcePosition;
+                pi->arguments = argumentNodes;
+                pi->isVariadic = isVariadic;
+                pi->resultType = resultType;
+                pi->callingConvention = callingConvention;
+                return pi->analyzeInEnvironment(environment);
+            }
         }
 
         ValuePtr argumentPattern;
         ValuePtr resultType;
+        SymbolPtr callingConvention;
     };
 
     typedef std::shared_ptr<SyntaxFunctionalDependentType> SyntaxFunctionalDependentTypePtr;
@@ -396,6 +531,46 @@ namespace Sysmel
 
         ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
+            if(!expectedTypeExpression && ! initialValueExpression)
+                throwExceptionWithMessage("A binding requires at least an initial value or type.");
+            
+            if(!initialValueExpression && !isMutable)
+                throwExceptionWithMessage("Cannot have immutable bindings without an initial value.");
+
+            ValuePtr analyzedExpectedType;
+            if(expectedTypeExpression)
+                analyzedExpectedType = expectedTypeExpression->analyzeInEnvironment(environment);
+
+            ValuePtr analyzedInitialValueExpression;
+            if(initialValueExpression)
+                analyzedInitialValueExpression = initialValueExpression->analyzeInEnvironment(environment);
+            if(expectedTypeExpression && analyzedInitialValueExpression)
+                analyzedInitialValueExpression = coerceIntoExpectedTypeAt(expectedTypeExpression, sourcePosition);
+            
+            auto localName = nameExpression->analyzeInEnvironment(environment)->asAnalyzedSymbolValue();
+            if(!localName)
+                return initialValueExpression->analyzeInEnvironment(environment);
+
+            NamespacePtr currentNamespace;
+            ModulePtr currentModule;
+            if(isPublic)
+            {
+                if(environment->getFunctionalAnalysisEnvironment())
+                    throwExceptionWithMessage("Cannot have public bindings inside of functions");
+                currentNamespace = environment->getNamespace();
+                currentModule = environment->getModule();
+            }
+
+            if(!isMutable && analyzedInitialValueExpression)
+            {
+                auto valueBinding = std::make_shared<SymbolValueBinding> ();
+                valueBinding->sourcePosition = sourcePosition;
+                valueBinding->name = localName;
+                valueBinding->analyzedValue = analyzedInitialValueExpression;
+                environment->addLocalSymbolBinding(localName, valueBinding);
+                return analyzedInitialValueExpression;
+            }
+
             abort();
         }
     };
@@ -453,7 +628,7 @@ namespace Sysmel
         {
             auto analyzedValue = value->analyzeInEnvironment(environment);
             auto expandedNode = pattern->expandBindingOfValueWithAt(analyzedValue, sourcePosition);
-            return expandedNode;
+            return expandedNode->analyzeInEnvironment(environment);
         }
 
         ValuePtr pattern;

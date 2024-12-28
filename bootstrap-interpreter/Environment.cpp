@@ -5,6 +5,11 @@
 namespace Sysmel
 {
 
+ValuePtr SymbolValueBinding::analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment)
+{
+    return analyzedValue;
+}
+
 ClassPtr IntrinsicsEnvironment::lookupValidClass(const std::string &name)
 {
     auto it = intrinsicClasses.find(name);

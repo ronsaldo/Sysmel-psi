@@ -105,6 +105,15 @@ ValuePtr Value::analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNo
     return literal;
 }
 
+bool Value::parseAndUnpackArgumentsPattern(std::vector<ValuePtr> &argumentNodes, bool &isExistential, bool &isVariadic)
+{
+    (void)argumentNodes;
+    (void)isExistential;
+    (void)isVariadic;
+
+    throwExceptionWithMessage((printString() + "is not a valid argument pattern spec.").c_str());
+}
+
 bool Value::isSatisfiedByType(const ValuePtr &sourceType)
 {
     auto self = shared_from_this();

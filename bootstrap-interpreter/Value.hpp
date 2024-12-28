@@ -58,6 +58,8 @@ public:
     virtual ValuePtr analyzeAndEvaluateInEnvironment(const EnvironmentPtr &environment);
     virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
 
+    virtual bool parseAndUnpackArgumentsPattern(std::vector<ValuePtr> &argumentNodes, bool &isExistential, bool &isVariadic);
+
     virtual bool isSatisfiedByType(const ValuePtr &sourceType);
     virtual ValuePtr coerceIntoExpectedTypeAt(const ValuePtr &targetType, const SourcePositionPtr &coercionLocation);
     virtual bool isSubclassOf(const ValuePtr &targetSuperclass);
@@ -88,7 +90,10 @@ public:
 
     virtual ValuePtr expandBindingOfValueWithAt(const ValuePtr &value, const SourcePositionPtr &position)
     {
-        throwExceptionWithMessageAt("Not a valid pattern expression.", sourcePosition);
+        std::ostringstream out;
+        value->printStringOn(out);
+        out << " is not a valid pattern expression.";
+        throwExceptionWithMessageAt(out.str().c_str(), sourcePosition);
     }
 
     virtual std::pair<size_t, const uint8_t*> getBinaryContentsData() const
