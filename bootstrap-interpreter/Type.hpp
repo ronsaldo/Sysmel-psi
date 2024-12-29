@@ -45,6 +45,8 @@ public:
         return it != methodDict.end() ? it->second : nullptr;
     }
 
+    virtual ValuePtr asTypeValue() { return shared_from_this(); }
+
     std::map<ValuePtr, ValuePtr> methodDict;
 };
 

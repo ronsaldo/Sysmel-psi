@@ -21,6 +21,24 @@ UndefinedObjectPtr UndefinedObject::uniqueInstance()
 
 UndefinedObjectPtr UndefinedObject::singleton;
 
+TruePtr True::uniqueInstance()
+{
+    if(!singleton)
+        singleton = std::make_shared<True> ();
+    return singleton;
+}
+
+TruePtr True::singleton;
+
+FalsePtr False::uniqueInstance()
+{
+    if(!singleton)
+        singleton = std::make_shared<False> ();
+    return singleton;
+}
+
+FalsePtr False::singleton;
+
 SymbolPtr Symbol::internString(const std::string &string)
 {
     auto it = internedSymbols.find(string);
@@ -40,6 +58,12 @@ ValuePtr PrimitiveMethod::applyWithArguments(const std::vector<ValuePtr> &argume
 {
     return implementation(arguments);
 }
+
+ValuePtr PrimitiveMacroMethod::applyMacroWithContextAndArguments(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments)
+{
+    return implementation(context, arguments);
+}
+
 
 BinaryFileStreamPtr Stdio::getValidStdinStream()
 {

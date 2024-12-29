@@ -26,6 +26,7 @@ typedef std::shared_ptr<class SyntaxError> SyntaxErrorPtr;
 typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
 typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
 typedef std::shared_ptr<class ArgumentTypeAnalysisContext> ArgumentTypeAnalysisContextPtr;
+typedef std::shared_ptr<class MacroContext> MacroContextPtr;
 
 class Value : public std::enable_shared_from_this<Value>
 {
@@ -38,6 +39,7 @@ public:
     virtual ValuePtr performWithArguments(const ValuePtr &selector, const std::vector<ValuePtr> &arguments);
     virtual ValuePtr performWithArgumentsOnInstance(const ValuePtr &receiver, const ValuePtr &selector, const std::vector<ValuePtr> &arguments);
     virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments);
+    virtual ValuePtr applyMacroWithContextAndArguments(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments);
     virtual ValuePtr lookupSelector(const ValuePtr &selector);
 
     virtual bool isType() const { return false; }
@@ -51,9 +53,13 @@ public:
     virtual bool isSyntaxError() const { return false; }
     virtual bool isBindableName() const { return false; }
     virtual bool isNil() const { return false; };
+    virtual bool isTrue() const { return false; };
+    virtual bool isFalse() const { return false; };
     virtual bool isFunctionalDependentTypeNode() const { return false; }
     virtual bool isGradualType() const { return false; }
+    virtual bool isMacro() const { return false; }
     virtual SymbolPtr asAnalyzedSymbolValue() { return nullptr; } 
+    virtual ValuePtr asTypeValue() { return nullptr; }
 
     virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment);
     virtual ValuePtr analyzeInEnvironmentForMacroExpansionOnly(const EnvironmentPtr &environment);

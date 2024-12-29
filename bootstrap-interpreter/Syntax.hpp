@@ -1189,6 +1189,15 @@ namespace Sysmel
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
             auto analyzedFunctional = functional->analyzeInEnvironment(environment);
+            if(analyzedFunctional->isMacro())
+            {
+                auto context = std::make_shared<MacroContext> ();
+                context->environment = environment;
+                context->sourcePosition = sourcePosition;
+                auto expandedMacro = analyzedFunctional->applyMacroWithContextAndArguments(context, arguments);
+                return expandedMacro->analyzeInEnvironment(environment);
+            }
+
             auto functionalType = analyzedFunctional->getType();
             auto argumentAnalysisContext = functionalType->createArgumentTypeAnalysisContext();
 
@@ -1387,6 +1396,74 @@ namespace Sysmel
         }
 
         ValuePtr value;
+    };
+
+    class SyntaxIf : public SyntacticValue
+    {
+    public:        
+        ValuePtr condition;
+        ValuePtr trueCase;
+        ValuePtr falseCase;
+
+        virtual void traverseChildren(const std::function<void(ValuePtr)> &function) const override
+        {
+            if (condition)
+            {
+                function(condition);
+                condition->traverseChildren(function);
+            }
+            if (trueCase)
+            {
+                function(trueCase);
+                trueCase->traverseChildren(function);
+            }
+            if (falseCase)
+            {
+                function(falseCase);
+                falseCase->traverseChildren(function);
+            }
+        }
+
+        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            auto booleanType = IntrinsicsEnvironment::uniqueInstance()->lookupValidClass("Boolean");
+            auto analyzedCondition = condition->analyzeInEnvironment(environment);
+            analyzedCondition = analyzedCondition->coerceIntoExpectedTypeAt(booleanType, sourcePosition);
+            ValuePtr analyzedTrueCase;
+            if(trueCase)
+            {
+                auto lexicalEnvironment = std::make_shared<LexicalEnvironment> (environment, trueCase->sourcePosition);
+                analyzedTrueCase = trueCase->analyzeInEnvironment(lexicalEnvironment);
+            }
+
+            ValuePtr analyzedFalseCase;
+            if(falseCase)
+            {
+                auto lexicalEnvironment = std::make_shared<LexicalEnvironment> (environment, trueCase->sourcePosition);
+                analyzedFalseCase = falseCase->analyzeInEnvironment(lexicalEnvironment);
+            }
+            auto resultType = IntrinsicsEnvironment::uniqueInstance()->lookupLocalSymbol(Symbol::internString("Void"));
+            bool returnsValue = false;
+            if(analyzedTrueCase && analyzedFalseCase)
+            {
+                auto trueResultType = analyzedTrueCase->getTypeOrClass();
+                auto falseResultType = analyzedFalseCase->getTypeOrClass();
+                printf("trueCase %s falseCase %s\n", analyzedTrueCase->printString().c_str(), analyzedFalseCase->printString().c_str());
+                printf("trueCaseType %s falseCaseType %s\n", trueResultType->printString().c_str(), falseResultType->printString().c_str());
+                if(trueResultType == falseResultType)
+                {
+                    resultType = trueResultType;
+                    returnsValue = true;
+                }
+            }
+
+            auto semanticIf = std::make_shared<SemanticIf> ();
+            semanticIf->returnsValue = returnsValue;
+            semanticIf->condition = analyzedCondition;
+            semanticIf->trueCase = analyzedTrueCase;
+            semanticIf->falseCase = analyzedFalseCase;
+            return semanticIf;
+        }
     };
 
 } // end of namespace Sysmel

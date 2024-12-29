@@ -27,7 +27,7 @@ namespace Sysmel
 
         virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
     };
-    
+
     class SymbolArgumentBinding : public Value
     {
     public:
@@ -191,9 +191,10 @@ namespace Sysmel
         void buildMetaHierarchy();
         void buildObjectPrimitives();
         void buildValuePrimitives();
-
+        void buildBasicMacros();
         void addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
         void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
+        void addPrimitiveGlobalMacro(const std::string &name, PrimitiveMacroImplementationSignature);
 
         static IntrinsicsEnvironmentPtr singleton;
         std::map<std::string, ClassPtr> intrinsicClasses;

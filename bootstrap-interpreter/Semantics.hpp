@@ -101,6 +101,8 @@ public:
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
         auto functionalValue = functional->evaluateInEnvironment(environment);
+        if(functionalValue->isMacro())
+            throwExceptionWithMessage("Macro methods have to evaluated during syntactic translation.");
         std::vector<ValuePtr> argumentValues;
         argumentValues.reserve(arguments.size());
         for(auto &argument : arguments)
@@ -332,10 +334,22 @@ public:
         return value->asAnalyzedSymbolValue(); 
     }
 
+    virtual ValuePtr asTypeValue() { return value->asTypeValue(); }
+
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
         (void)environment;
         return value;
+    }
+
+    virtual bool isMacro() const override
+    {
+        return value->isMacro();
+    }
+
+    virtual ValuePtr applyMacroWithContextAndArguments(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments) override
+    {
+        return value->applyMacroWithContextAndArguments(context, arguments);
     }
 
     ValuePtr value;
@@ -474,8 +488,43 @@ public:
         return foundValue;
     }
 
+    virtual ValuePtr getType() const override
+    {
+        return identifierBinding->getType();
+    }
+
+    virtual ValuePtr getClass() const override
+    {
+        return identifierBinding->getClass();
+    }
+
+    virtual ValuePtr getClassOrType() const override
+    {
+        return identifierBinding->getClassOrType();
+    }
+
+    virtual ValuePtr getTypeOrClass() const override
+    {
+        return identifierBinding->getTypeOrClass();
+    }
+
     ValuePtr identifierBinding;
 };
+
+class SemanticIf : public SemanticValue
+{
+public:
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        abort();
+    }
+
+    bool returnsValue = false;
+    ValuePtr condition;
+    ValuePtr trueCase;
+    ValuePtr falseCase;
+};
+
 } // End of namespace Sysmel
 
 #endif //SYSMEL_SEMANTICS_HPP

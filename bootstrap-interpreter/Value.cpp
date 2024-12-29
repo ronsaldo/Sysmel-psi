@@ -49,6 +49,13 @@ ValuePtr Value::applyWithArguments(const std::vector<ValuePtr> &arguments)
     throwExceptionWithMessage("Cannot apply over non-functional value.");
 }
 
+ValuePtr Value::applyMacroWithContextAndArguments(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments)
+{
+    (void)context;
+    (void)arguments;
+    throwExceptionWithMessage("Cannot apply over non-functional macro value.");
+}
+
 ValuePtr Value::lookupSelector(const ValuePtr &selector)
 {
     (void)selector;

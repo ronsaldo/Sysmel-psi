@@ -1,11 +1,16 @@
 AddClass(ProtoObject)
 AddClassWithSuperclass(Object, ProtoObject)
 AddClassWithSuperclass(UndefinedObject, Object)
+AddClassWithSuperclass(Boolean, Object)
+AddClassWithSuperclass(True, Boolean)
+AddClassWithSuperclass(False, Boolean)
 AddClassWithSuperclass(Behavior, Object)
 AddClassWithSuperclass(ClassDescription, Behavior)
 AddClassWithSuperclass(Class, ClassDescription)
 AddClassWithSuperclass(Metaclass, ClassDescription)
 
+AddClassWithSuperclass(MacroContext, Object)
+AddClassWithSuperclass(PrimitiveMacroMethod, Object)
 AddClassWithSuperclass(PrimitiveMethod, Object)
 AddClassWithSuperclass(CompiledMethod, Object)
 

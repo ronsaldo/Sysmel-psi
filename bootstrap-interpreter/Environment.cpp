@@ -2,6 +2,7 @@
 #include "Assert.hpp"
 #include "Type.hpp"
 #include "Semantics.hpp"
+#include "Syntax.hpp"
 
 namespace Sysmel
 {
@@ -54,6 +55,7 @@ void IntrinsicsEnvironment::buildIntrinsicsState()
     buildBasicTypes();
     buildObjectPrimitives();
     buildValuePrimitives();
+    buildBasicMacros();
 }
 
 void IntrinsicsEnvironment::buildBasicTypes()
@@ -62,6 +64,8 @@ void IntrinsicsEnvironment::buildBasicTypes()
     addLocalSymbolBinding(Symbol::internString("UnitType"),   UnitType::uniqueInstance());
     addLocalSymbolBinding(Symbol::internString("BottomType"), BottomType::uniqueInstance());
     addLocalSymbolBinding(Symbol::internString("Void"),       VoidType::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("true"),       True::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("false"),      False::uniqueInstance());
 }
 
 void IntrinsicsEnvironment::buildMetaHierarchy()
@@ -259,6 +263,18 @@ void IntrinsicsEnvironment::buildValuePrimitives()
 {
 }
 
+void IntrinsicsEnvironment::buildBasicMacros()
+{
+    addPrimitiveGlobalMacro("if:then:else:", [](const MacroContextPtr &context, const std::vector<ValuePtr> &arguments){
+        auto syntaxIf = std::make_shared<SyntaxIf> ();
+        syntaxIf->sourcePosition = context->sourcePosition;
+        syntaxIf->condition = arguments[0];
+        syntaxIf->trueCase = arguments[1];
+        syntaxIf->falseCase = arguments[2];
+        return syntaxIf;
+    });
+}
+    
 void IntrinsicsEnvironment::addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature impl)
 {
     auto primitive = std::make_shared<PrimitiveMethod> (impl);
@@ -271,6 +287,12 @@ void IntrinsicsEnvironment::addPrimitiveToMetaclass(const std::string &className
     auto primitive = std::make_shared<PrimitiveMethod> (impl);
     auto &clazz = intrinsicMetaclasses[className];
     clazz->methodDict[Symbol::internString(selector)] = primitive;
+}
+
+void IntrinsicsEnvironment::addPrimitiveGlobalMacro(const std::string &name, PrimitiveMacroImplementationSignature impl)
+{
+    auto primitiveMacro = std::make_shared<PrimitiveMacroMethod> (impl);
+    addLocalSymbolBinding(Symbol::internString(name), primitiveMacro);
 }
 
 IntrinsicsEnvironmentPtr IntrinsicsEnvironment::uniqueInstance()

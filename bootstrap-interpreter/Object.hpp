@@ -13,12 +13,16 @@ namespace Sysmel
     typedef std::shared_ptr<class ProtoObject> ProtoObjectPtr;
     typedef std::shared_ptr<class Object> ObjectPtr;
     typedef std::shared_ptr<class UndefinedObject> UndefinedObjectPtr;
+    typedef std::shared_ptr<class True> TruePtr;
+    typedef std::shared_ptr<class False> FalsePtr;
     typedef std::shared_ptr<class Class> ClassPtr;
     typedef std::shared_ptr<class Metaclass> MetaclassPtr;
     typedef std::shared_ptr<class Symbol> SymbolPtr;
     typedef std::shared_ptr<class BinaryStream> BinaryStreamPtr;
     typedef std::shared_ptr<class BinaryFileStream> BinaryFileStreamPtr;
+    typedef std::shared_ptr<class MacroContext> MacroContextPtr;
     typedef std::function<ValuePtr(const std::vector<ValuePtr> &arguments)> PrimitiveImplementationSignature;
+    typedef std::function<ValuePtr(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments)> PrimitiveMacroImplementationSignature;
 
     class ProtoObject : public Value
     {
@@ -165,6 +169,31 @@ namespace Sysmel
         ClassWeakPtr thisClass;
     };
 
+    class Boolean : public Object
+    {
+    public:
+    };
+
+    class True : public Object
+    {
+    public:
+        virtual bool isTrue() const { return true; };
+
+        static TruePtr uniqueInstance();
+    private:
+        static TruePtr singleton;
+    };
+
+    class False : public Object
+    {
+    public:
+        virtual bool isFalse() const { return true; };
+
+        static FalsePtr uniqueInstance();
+    private:
+        static FalsePtr singleton;
+    };
+
     class PrimitiveMethod : public Object
     {
     public:
@@ -175,6 +204,25 @@ namespace Sysmel
         virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments) override;
 
         PrimitiveImplementationSignature implementation;
+    };
+
+    class MacroContext : public Object
+    {
+    public:
+        EnvironmentPtr environment;
+    };
+
+    class PrimitiveMacroMethod : public Object
+    {
+    public:
+        PrimitiveMacroMethod(PrimitiveMacroImplementationSignature cimplementation)
+            : implementation(cimplementation) {}
+
+        virtual const char *getClassName() const override { return "PrimitiveMacroMethod"; }
+        virtual bool isMacro() const override { return true;};
+        virtual ValuePtr applyMacroWithContextAndArguments(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments) override;
+
+        PrimitiveMacroImplementationSignature implementation;
     };
 
     class CompiledMethod : public Object
