@@ -362,17 +362,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
             floatObject->value = self->value.asDouble();
             return floatObject;
         });
-    addPrimitiveToClass("Integer", "u8", 
-        SimpleFunctionType::make(
-            lookupValidClass("Integer"), "self",
-            PrimitiveUInt8Type::uniqueInstance()),
-        [](const std::vector<ValuePtr> &arguments) {
-            sysmelAssert(arguments.size() == 1);
-            auto self = std::static_pointer_cast<Integer> (arguments[0]);
-            auto primitive = std::make_shared<PrimitiveUInt8Value> ();
-            primitive->value = uint8_t(self->value.wordAt(0));
-            return primitive;
-        });
+
 
     // Stream
     addPrimitiveToClass("Stream", "nextPut:",
@@ -424,9 +414,72 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
             return Stdio::getValidStderrStream();
         });
 }
+template<typename PrimitiveNumberTypeClass, typename PrimitiveNumberValueClass>
+void buildPrimitiveTypeMethods(IntrinsicsEnvironment *environment,
+    const char *literalSuffix, const char *conversionMethodName)
+{
+    auto integerType = environment->lookupValidClass("Integer");
+    auto floatType = environment->lookupValidClass("Float");
+    environment->addPrimitiveToClass("Integer", literalSuffix,
+        SimpleFunctionType::make(integerType, "self", PrimitiveNumberTypeClass::uniqueInstance()),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Integer> (arguments[0]);
+            auto primitive = std::make_shared<PrimitiveNumberValueClass> ();
+            primitive->value = typename PrimitiveNumberValueClass::ValueType(self->value);
+            return primitive;
+        });
+
+    environment->addPrimitiveToClass("Integer", conversionMethodName,
+        SimpleFunctionType::make(integerType, "self", PrimitiveNumberTypeClass::uniqueInstance()),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Integer> (arguments[0]);
+            auto primitive = std::make_shared<PrimitiveNumberValueClass> ();
+            primitive->value = typename PrimitiveNumberValueClass::ValueType(self->value);
+            return primitive;
+        });
+
+    environment->addPrimitiveToClass("Float", literalSuffix,
+        SimpleFunctionType::make(floatType, "self", PrimitiveNumberTypeClass::uniqueInstance()),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Float> (arguments[0]);
+            auto primitive = std::make_shared<PrimitiveNumberValueClass> ();
+            primitive->value = typename PrimitiveNumberValueClass::ValueType(self->value);
+            return primitive;
+        });
+
+    environment->addPrimitiveToClass("Float", conversionMethodName,
+        SimpleFunctionType::make(floatType, "self", PrimitiveNumberTypeClass::uniqueInstance()),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Float> (arguments[0]);
+            auto primitive = std::make_shared<PrimitiveNumberValueClass> ();
+            primitive->value = typename PrimitiveNumberValueClass::ValueType(self->value);
+            return primitive;
+        });
+}
 
 void IntrinsicsEnvironment::buildValuePrimitives()
 {
+    buildPrimitiveTypeMethods<PrimitiveUInt8Type,  PrimitiveUInt8Value>  (this, "u8", "asUInt8");
+    buildPrimitiveTypeMethods<PrimitiveUInt16Type, PrimitiveUInt16Value> (this, "u16", "asUInt16");
+    buildPrimitiveTypeMethods<PrimitiveUInt32Type, PrimitiveUInt32Value> (this, "u32", "asUInt32");
+    buildPrimitiveTypeMethods<PrimitiveUInt64Type, PrimitiveUInt64Value> (this, "u64", "asUInt64");
+
+    buildPrimitiveTypeMethods<PrimitiveInt8Type,  PrimitiveInt8Value>  (this, "i8",  "asInt8");
+    buildPrimitiveTypeMethods<PrimitiveInt16Type, PrimitiveInt16Value> (this, "i16", "asInt16");
+    buildPrimitiveTypeMethods<PrimitiveInt32Type, PrimitiveInt32Value> (this, "i32", "asInt32");
+    buildPrimitiveTypeMethods<PrimitiveInt64Type, PrimitiveInt64Value> (this, "i64", "asInt64");
+
+    buildPrimitiveTypeMethods<PrimitiveChar8Type,  PrimitiveChar8Value>  (this, "c8",  "asChar8");
+    buildPrimitiveTypeMethods<PrimitiveChar16Type, PrimitiveChar16Value> (this, "c16", "asChar16");
+    buildPrimitiveTypeMethods<PrimitiveChar32Type, PrimitiveChar32Value> (this, "c32", "asChar32");
+
+    buildPrimitiveTypeMethods<PrimitiveFloat32Type, PrimitiveFloat32Value> (this, "f32", "asFloat32");
+    buildPrimitiveTypeMethods<PrimitiveFloat64Type, PrimitiveFloat64Value> (this, "f64", "asFloat64");
+
 }
 
 void IntrinsicsEnvironment::buildBasicMacros()

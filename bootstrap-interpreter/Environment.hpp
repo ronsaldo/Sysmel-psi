@@ -212,6 +212,10 @@ namespace Sysmel
         MetaclassPtr lookupValidMetaclass(const std::string &s);
         void addIntrinsicClass(const ClassPtr &intrinsicClass);
 
+        void addPrimitiveToClass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
+        void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
+        void addPrimitiveGlobalMacro(const std::string &name, ValuePtr functionalType, PrimitiveMacroImplementationSignature);
+
     private:
         void buildIntrinsicsState();
         void buildBasicTypes();
@@ -219,9 +223,6 @@ namespace Sysmel
         void buildObjectPrimitives();
         void buildValuePrimitives();
         void buildBasicMacros();
-        void addPrimitiveToClass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
-        void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
-        void addPrimitiveGlobalMacro(const std::string &name, ValuePtr functionalType, PrimitiveMacroImplementationSignature);
 
         static IntrinsicsEnvironmentPtr singleton;
         std::map<std::string, ClassPtr> intrinsicClasses;

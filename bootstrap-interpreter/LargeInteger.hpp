@@ -162,6 +162,73 @@ struct LargeInteger
     std::string asString() const;
     void normalize();
 
+    operator uint8_t() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator uint16_t() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator uint32_t() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator uint64_t() const
+    {
+        auto result = uint64_t(wordAt(0)) | (uint64_t(wordAt(1)) << 32);
+        return signBit ? -result : result;
+    }
+
+    operator int8_t() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator int16_t() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator int32_t() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator int64_t() const
+    {
+        auto result = int64_t(wordAt(0)) | (int64_t(wordAt(1)) << 32);
+        return signBit ? -result : result;
+    }
+
+    operator char() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator char16_t() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator char32_t() const
+    {
+        return signBit ? -wordAt(0) : wordAt(0);
+    }
+
+    operator float() const
+    {
+        return float(asDouble());
+    }
+
+    operator double() const
+    {
+        return asDouble();
+    }
+
     static LargeInteger gcd(const LargeInteger &a, const LargeInteger &b);
 
     friend std::ostream &operator<<(std::ostream &out, const LargeInteger &integer)
