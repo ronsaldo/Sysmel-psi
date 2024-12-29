@@ -85,6 +85,23 @@ void IntrinsicsEnvironment::buildBasicTypes()
     addLocalSymbolBinding(Symbol::internString("true"),       True::uniqueInstance());
     addLocalSymbolBinding(Symbol::internString("false"),      False::uniqueInstance());
     addLocalSymbolBinding(Symbol::internString("void"),       VoidValue::uniqueInstance());
+
+    addLocalSymbolBinding(Symbol::internString("UInt8"),  PrimitiveUInt8Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("UInt16"), PrimitiveUInt16Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("UInt32"), PrimitiveUInt32Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("UInt64"), PrimitiveUInt64Type::uniqueInstance());
+
+    addLocalSymbolBinding(Symbol::internString("Int8"),   PrimitiveInt8Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Int16"),  PrimitiveInt16Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Int32"),  PrimitiveInt32Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Int64"),  PrimitiveInt64Type::uniqueInstance());
+
+    addLocalSymbolBinding(Symbol::internString("Char8"),  PrimitiveChar8Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Char16"), PrimitiveChar16Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Char32"), PrimitiveChar32Type::uniqueInstance());
+
+    addLocalSymbolBinding(Symbol::internString("Float32"), PrimitiveFloat32Type::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("Float64"), PrimitiveFloat64Type::uniqueInstance());
 }
 
 void IntrinsicsEnvironment::buildMetaHierarchy()
@@ -344,6 +361,17 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
             auto floatObject = std::make_shared<Float> ();
             floatObject->value = self->value.asDouble();
             return floatObject;
+        });
+    addPrimitiveToClass("Integer", "u8", 
+        SimpleFunctionType::make(
+            lookupValidClass("Integer"), "self",
+            PrimitiveUInt8Type::uniqueInstance()),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Integer> (arguments[0]);
+            auto primitive = std::make_shared<PrimitiveUInt8Value> ();
+            primitive->value = uint8_t(self->value.wordAt(0));
+            return primitive;
         });
 
     // Stream
