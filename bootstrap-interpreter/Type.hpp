@@ -276,6 +276,8 @@ public:
 };
 
 
+typedef std::shared_ptr<class SimpleFunctionType> SimpleFunctionTypePtr;
+
 class SimpleFunctionType : public TypeBehavior
 {
 public:
@@ -284,6 +286,73 @@ public:
     std::vector<ValuePtr> argumentTypes;
     std::vector<SymbolPtr> argumentNames;
     ValuePtr resultType;
+
+    static SimpleFunctionTypePtr make(const ValuePtr &resultType)
+    {
+        auto functionalType = std::make_shared<SimpleFunctionType> ();
+        functionalType->resultType = resultType;
+        return functionalType;
+    }
+
+    static SimpleFunctionTypePtr make(const ValuePtr &arg0Type, const std::string &arg0Name, const ValuePtr &resultType)
+    {
+        auto functionalType = std::make_shared<SimpleFunctionType> ();
+        functionalType->argumentTypes.push_back(arg0Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg0Name));
+        functionalType->resultType = resultType;
+        return functionalType;
+    }
+
+    static SimpleFunctionTypePtr make(
+        const ValuePtr &arg0Type, const std::string &arg0Name,
+        const ValuePtr &arg1Type, const std::string &arg1Name,
+        const ValuePtr &resultType)
+    {
+        auto functionalType = std::make_shared<SimpleFunctionType> ();
+        functionalType->argumentTypes.push_back(arg0Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg0Name));
+        functionalType->argumentTypes.push_back(arg1Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg1Name));
+        functionalType->resultType = resultType;
+        return functionalType;
+    }
+
+    static SimpleFunctionTypePtr make(
+        const ValuePtr &arg0Type, const std::string &arg0Name,
+        const ValuePtr &arg1Type, const std::string &arg1Name,
+        const ValuePtr &arg2Type, const std::string &arg2Name,
+        const ValuePtr &resultType)
+    {
+        auto functionalType = std::make_shared<SimpleFunctionType> ();
+        functionalType->argumentTypes.push_back(arg0Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg0Name));
+        functionalType->argumentTypes.push_back(arg1Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg1Name));
+        functionalType->argumentTypes.push_back(arg2Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg2Name));
+        functionalType->resultType = resultType;
+        return functionalType;
+    }
+
+    static SimpleFunctionTypePtr make(
+        const ValuePtr &arg0Type, const std::string &arg0Name,
+        const ValuePtr &arg1Type, const std::string &arg1Name,
+        const ValuePtr &arg2Type, const std::string &arg2Name,
+        const ValuePtr &arg3Type, const std::string &arg3Name,
+        const ValuePtr &resultType)
+    {
+        auto functionalType = std::make_shared<SimpleFunctionType> ();
+        functionalType->argumentTypes.push_back(arg0Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg0Name));
+        functionalType->argumentTypes.push_back(arg1Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg1Name));
+        functionalType->argumentTypes.push_back(arg2Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg2Name));
+        functionalType->argumentTypes.push_back(arg3Type);
+        functionalType->argumentNames.push_back(Symbol::internString(arg3Name));
+        functionalType->resultType = resultType;
+        return functionalType;
+    }
 };
 
 }// End of namespace Sysmel

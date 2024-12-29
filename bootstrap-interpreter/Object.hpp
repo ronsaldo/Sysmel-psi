@@ -216,12 +216,13 @@ namespace Sysmel
     class PrimitiveMethod : public Object
     {
     public:
-        PrimitiveMethod(PrimitiveImplementationSignature cimplementation)
-            : implementation(cimplementation) {}
+        PrimitiveMethod(ValuePtr ctype, PrimitiveImplementationSignature cimplementation)
+            : type(ctype), implementation(cimplementation) {}
 
         virtual const char *getClassName() const override { return "PrimitiveMethod"; }
         virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments) override;
 
+        ValuePtr type;
         PrimitiveImplementationSignature implementation;
     };
 
@@ -234,21 +235,15 @@ namespace Sysmel
     class PrimitiveMacroMethod : public Object
     {
     public:
-        PrimitiveMacroMethod(PrimitiveMacroImplementationSignature cimplementation)
-            : implementation(cimplementation) {}
+        PrimitiveMacroMethod(ValuePtr ctype, PrimitiveMacroImplementationSignature cimplementation)
+            : type(ctype), implementation(cimplementation) {}
 
         virtual const char *getClassName() const override { return "PrimitiveMacroMethod"; }
         virtual bool isMacro() const override { return true;};
         virtual ValuePtr applyMacroWithContextAndArguments(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments) override;
 
+        ValuePtr type;
         PrimitiveMacroImplementationSignature implementation;
-    };
-
-    class CompiledMethod : public Object
-    {
-    public:
-        virtual const char *getClassName() const override { return "CompiledMethod"; }
-        virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments) override;
     };
 
     class Magnitude : public Object

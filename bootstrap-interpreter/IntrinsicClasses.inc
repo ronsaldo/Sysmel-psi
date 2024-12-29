@@ -12,7 +12,6 @@ AddClassWithSuperclass(Metaclass, ClassDescription)
 AddClassWithSuperclass(MacroContext, Object)
 AddClassWithSuperclass(PrimitiveMacroMethod, Object)
 AddClassWithSuperclass(PrimitiveMethod, Object)
-AddClassWithSuperclass(CompiledMethod, Object)
 
 AddClassWithSuperclass(Magnitude, Object)
 AddClassWithSuperclass(Character, Magnitude)
@@ -34,6 +33,8 @@ AddClassWithSuperclass(BinaryStream, AbstractBinaryStream)
 AddClassWithSuperclass(BinaryFileStream, BinaryStream)
 
 AddClassWithSuperclass(Stdio, Object)
+
+AddClassWithSuperclass(SyntacticValue, Object)
 
 AddClassWithSuperclass(SemanticValue, Object)
 AddClassWithSuperclass(SemanticValueSequence, SemanticValue)

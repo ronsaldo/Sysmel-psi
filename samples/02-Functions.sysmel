@@ -1,0 +1,5 @@
+:id(:(Integer)x :: Integer) := x.
+:sum(:(Integer)x, :(Integer)y :: Integer) := x + y.
+
+Stdio stdout nextPutAll: id(42) printString; nextPutAll: "\n".
+Stdio stdout nextPutAll: sum(42 . 5) printString; nextPutAll: "\n".

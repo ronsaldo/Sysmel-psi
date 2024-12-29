@@ -137,65 +137,108 @@ void IntrinsicsEnvironment::buildMetaHierarchy()
 void IntrinsicsEnvironment::buildObjectPrimitives()
 {
     // ProtoObject
-    addPrimitiveToClass("ProtoObject", "class", [](const std::vector<ValuePtr> &arguments){
-        sysmelAssert(arguments.size() == 1);
-        auto self = std::static_pointer_cast<ProtoObject> (arguments[0]);
-        return self->clazz;
-    });
-    addPrimitiveToClass("ProtoObject", "identityHash", [](const std::vector<ValuePtr> &arguments){
-        sysmelAssert(arguments.size() == 1);
-        auto self = std::static_pointer_cast<ProtoObject> (arguments[0]);
-        auto result = std::make_shared<Integer> ();
-        result->value = LargeInteger(self->identityHash);
-        return result;
-    });
+    addPrimitiveToClass("ProtoObject", "class",
+        SimpleFunctionType::make(lookupValidClass("ProtoObject"), "self", lookupValidClass("ProtoObject")),
+        [](const std::vector<ValuePtr> &arguments){
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<ProtoObject> (arguments[0]);
+            return self->clazz;
+        });
+    addPrimitiveToClass("ProtoObject", "identityHash",
+        SimpleFunctionType::make(lookupValidClass("ProtoObject"), "self", lookupValidClass("Integer")),
+        [](const std::vector<ValuePtr> &arguments){
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<ProtoObject> (arguments[0]);
+            auto result = std::make_shared<Integer> ();
+            result->value = LargeInteger(self->identityHash);
+            return result;
+        });
 
     // Behavior
-    addPrimitiveToClass("Behavior", "withSelector:addMethod:", [](const std::vector<ValuePtr> &arguments) {
-        sysmelAssert(arguments.size() == 3);
-        auto behavior = std::static_pointer_cast<Behavior> (arguments[0]);
-        auto selector = arguments[1];
-        auto method = arguments[0];
-        behavior->methodDict.insert(std::make_pair(selector->asAnalyzedSymbolValue(), method));
-        return behavior;
-    });
+    addPrimitiveToClass("Behavior", "withSelector:addMethod:",
+        SimpleFunctionType::make(
+            lookupValidClass("Behavior"), "self",
+            lookupValidClass("Symbol"), "selector",
+            GradualType::uniqueInstance(), "method",
+            lookupValidClass("Behavior")),
+
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 3);
+            auto behavior = std::static_pointer_cast<Behavior> (arguments[0]);
+            auto selector = arguments[1];
+            auto method = arguments[0];
+            behavior->methodDict.insert(std::make_pair(selector->asAnalyzedSymbolValue(), method));
+            return behavior;
+        });
 
     // Object
-    addPrimitiveToClass("Object", "printString", [](const std::vector<ValuePtr> &arguments){
-        sysmelAssert(arguments.size() == 1);
-        auto string = arguments[0]->printString();
-        auto stringObject = std::make_shared<String> ();
-        stringObject->value = string;
-        return stringObject;
-    });
-    addPrimitiveToClass("Object", "yourself", [](const std::vector<ValuePtr> &arguments){
-        sysmelAssert(arguments.size() == 1);
-        return arguments[0];
-    });
+    addPrimitiveToClass("Object", "printString", 
+        SimpleFunctionType::make(
+            lookupValidClass("Object"), "self",
+            lookupValidClass("String")),
+        [](const std::vector<ValuePtr> &arguments){
+            sysmelAssert(arguments.size() == 1);
+            auto string = arguments[0]->printString();
+            auto stringObject = std::make_shared<String> ();
+            stringObject->value = string;
+            return stringObject;
+        });
+    addPrimitiveToClass("Object", "yourself",
+        SimpleFunctionType::make(
+            lookupValidClass("Object"), "self",
+            lookupValidClass("Object")),
+        [](const std::vector<ValuePtr> &arguments){
+            sysmelAssert(arguments.size() == 1);
+            return arguments[0];
+        });
     
-    addPrimitiveToClass("Object", "at:", [](const std::vector<ValuePtr> &arguments){
-        sysmelAssert(arguments.size() == 2);
-        auto index = arguments[1]->evaluateAsIndex();
-        return arguments[0]->getElementAtIndex(index);
-    });
-    addPrimitiveToClass("Object", "at:put:", [](const std::vector<ValuePtr> &arguments){
-        sysmelAssert(arguments.size() == 3);
-        auto index = arguments[1]->evaluateAsIndex();
-        return arguments[0]->setElementAtIndex(index, arguments[2]);
-    });
+    addPrimitiveToClass("Object", "at:",
+        SimpleFunctionType::make(
+            lookupValidClass("Object"), "self",
+            lookupValidClass("Integer"), "index",
+            lookupValidClass("Object")),
+        [](const std::vector<ValuePtr> &arguments){
+            sysmelAssert(arguments.size() == 2);
+            auto index = arguments[1]->evaluateAsIndex();
+            return arguments[0]->getElementAtIndex(index);
+        });
+    addPrimitiveToClass("Object", "at:put:",
+        SimpleFunctionType::make(
+            lookupValidClass("Object"), "self",
+            lookupValidClass("Integer"), "index",
+            lookupValidClass("Object"), "element",
+            lookupValidClass("Object")), 
+        [](const std::vector<ValuePtr> &arguments){
+            sysmelAssert(arguments.size() == 3);
+            auto index = arguments[1]->evaluateAsIndex();
+            return arguments[0]->setElementAtIndex(index, arguments[2]);
+        });
 
     // Collection
-    addPrimitiveToClass("Collection", "size", [](const std::vector<ValuePtr> &arguments){
-        sysmelAssert(arguments.size() == 1);
-        auto collection = std::static_pointer_cast<Collection> (arguments[0]);
-        auto size = collection->getSize();
-        auto sizeInteger = std::make_shared<Integer> ();
-        sizeInteger->value = LargeInteger(size);
-        return sizeInteger;
-    });
+    addPrimitiveToClass("Collection", "size",
+        SimpleFunctionType::make(
+            lookupValidClass("Collection"), "self",
+            lookupValidClass("Integer")),
+        [](const std::vector<ValuePtr> &arguments){
+            sysmelAssert(arguments.size() == 1);
+            auto collection = std::static_pointer_cast<Collection> (arguments[0]);
+            auto size = collection->getSize();
+            auto sizeInteger = std::make_shared<Integer> ();
+            sizeInteger->value = LargeInteger(size);
+            return sizeInteger;
+        });
 
     // Integer
-    addPrimitiveToClass("Integer", "+", [](const std::vector<ValuePtr> &arguments){
+    auto integerBinaryArithmeticType = SimpleFunctionType::make(
+            lookupValidClass("Integer"), "self",
+            lookupValidClass("Integer"), "other",
+            lookupValidClass("Integer"));
+    auto integerBinaryComparisonType = SimpleFunctionType::make(
+            lookupValidClass("Integer"), "self",
+            lookupValidClass("Integer"), "other",
+            lookupValidClass("Boolean"));
+
+    addPrimitiveToClass("Integer", "+", integerBinaryArithmeticType, [](const std::vector<ValuePtr> &arguments){
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
@@ -204,7 +247,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value + right->value;
         return result;
     });
-    addPrimitiveToClass("Integer", "-", [](const std::vector<ValuePtr> &arguments){
+    addPrimitiveToClass("Integer", "-", integerBinaryArithmeticType, [](const std::vector<ValuePtr> &arguments){
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
@@ -213,7 +256,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value - right->value;
         return result;
     });
-    addPrimitiveToClass("Integer", "*", [](const std::vector<ValuePtr> &arguments) {
+    addPrimitiveToClass("Integer", "*", integerBinaryArithmeticType, [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
@@ -222,7 +265,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value * right->value;
         return result;
     });
-    addPrimitiveToClass("Integer", "//", [](const std::vector<ValuePtr> &arguments) {
+    addPrimitiveToClass("Integer", "//", integerBinaryArithmeticType, [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
@@ -231,7 +274,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value / right->value;
         return result;
     });
-    addPrimitiveToClass("Integer", "\\\\", [](const std::vector<ValuePtr> &arguments) {
+    addPrimitiveToClass("Integer", "\\\\", integerBinaryArithmeticType, [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
@@ -240,25 +283,25 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value % right->value;
         return result;
     });
-    addPrimitiveToClass("Integer", "<", [](const std::vector<ValuePtr> &arguments) {
+    addPrimitiveToClass("Integer", "<", integerBinaryComparisonType, [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
         return Boolean::encode(left->value < right->value);
     });
-    addPrimitiveToClass("Integer", "<=", [](const std::vector<ValuePtr> &arguments) {
+    addPrimitiveToClass("Integer", "<=", integerBinaryComparisonType, [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
         return Boolean::encode(left->value <= right->value);
     });
-    addPrimitiveToClass("Integer", ">", [](const std::vector<ValuePtr> &arguments) {
+    addPrimitiveToClass("Integer", ">", integerBinaryComparisonType, [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
         return Boolean::encode(left->value > right->value);
     });
-    addPrimitiveToClass("Integer", ">=", [](const std::vector<ValuePtr> &arguments) {
+    addPrimitiveToClass("Integer", ">=", integerBinaryComparisonType, [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
@@ -266,32 +309,54 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
     });
 
     // Stream
-    addPrimitiveToClass("Stream", "nextPut:", [](const std::vector<ValuePtr> &arguments) {
-        sysmelAssert(arguments.size() == 2);
-        auto stream = std::static_pointer_cast<Stream> (arguments[0]);
-        stream->nextPut(arguments[1]);
-        return stream;
-    });
-    addPrimitiveToClass("Stream", "nextPutAll:", [](const std::vector<ValuePtr> &arguments) {
-        sysmelAssert(arguments.size() == 2);
-        auto stream = std::static_pointer_cast<Stream> (arguments[0]);
-        stream->nextPutAll(arguments[1]);
-        return stream;
-    });
+    addPrimitiveToClass("Stream", "nextPut:",
+        SimpleFunctionType::make(
+                lookupValidClass("Stream"), "self",
+                lookupValidClass("Object"), "element",
+                lookupValidClass("Stream")),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 2);
+            auto stream = std::static_pointer_cast<Stream> (arguments[0]);
+            stream->nextPut(arguments[1]);
+            return stream;
+        });
+    addPrimitiveToClass("Stream", "nextPutAll:",
+        SimpleFunctionType::make(
+                lookupValidClass("Stream"), "self",
+                lookupValidClass("Object"), "elements",
+                lookupValidClass("Stream")),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 2);
+            auto stream = std::static_pointer_cast<Stream> (arguments[0]);
+            stream->nextPutAll(arguments[1]);
+            return stream;
+        });
 
     // Stdio
-    addPrimitiveToMetaclass("Stdio", "stdin", [](const std::vector<ValuePtr> &arguments) {
-        (void)arguments;
-        return Stdio::getValidStdinStream();
-    });
-    addPrimitiveToMetaclass("Stdio", "stdout", [](const std::vector<ValuePtr> &arguments) {
-        (void)arguments;
-        return Stdio::getValidStdoutStream();
-    });
-    addPrimitiveToMetaclass("Stdio", "stderr", [](const std::vector<ValuePtr> &arguments) {
-        (void)arguments;
-        return Stdio::getValidStderrStream();
-    });
+    addPrimitiveToMetaclass("Stdio", "stdin",
+        SimpleFunctionType::make(
+                lookupValidClass("Stdio"), "self",
+                lookupValidClass("BinaryFileStream")),
+        [](const std::vector<ValuePtr> &arguments) {
+            (void)arguments;
+            return Stdio::getValidStdinStream();
+        });
+    addPrimitiveToMetaclass("Stdio", "stdout",
+        SimpleFunctionType::make(
+            lookupValidClass("Stdio"), "self",
+            lookupValidClass("BinaryFileStream")),
+        [](const std::vector<ValuePtr> &arguments) {
+            (void)arguments;
+            return Stdio::getValidStdoutStream();
+        });
+    addPrimitiveToMetaclass("Stdio", "stderr",
+        SimpleFunctionType::make(
+                lookupValidClass("Stdio"), "self",
+                lookupValidClass("BinaryFileStream")),
+        [](const std::vector<ValuePtr> &arguments) {
+            (void)arguments;
+            return Stdio::getValidStderrStream();
+        });
 }
 
 void IntrinsicsEnvironment::buildValuePrimitives()
@@ -300,33 +365,40 @@ void IntrinsicsEnvironment::buildValuePrimitives()
 
 void IntrinsicsEnvironment::buildBasicMacros()
 {
-    addPrimitiveGlobalMacro("if:then:else:", [](const MacroContextPtr &context, const std::vector<ValuePtr> &arguments){
-        auto syntaxIf = std::make_shared<SyntaxIf> ();
-        syntaxIf->sourcePosition = context->sourcePosition;
-        syntaxIf->condition = arguments[0];
-        syntaxIf->trueCase = arguments[1];
-        syntaxIf->falseCase = arguments[2];
-        return syntaxIf;
-    });
+    addPrimitiveGlobalMacro("if:then:else:",
+        SimpleFunctionType::make(
+            lookupValidClass("MacroContext"), "context",
+            lookupValidClass("SyntacticValue"), "condition",
+            lookupValidClass("SyntacticValue"), "trueCase",
+            lookupValidClass("SyntacticValue"), "falseCase",
+            lookupValidClass("SyntacticValue")),
+        [](const MacroContextPtr &context, const std::vector<ValuePtr> &arguments){
+            auto syntaxIf = std::make_shared<SyntaxIf> ();
+            syntaxIf->sourcePosition = context->sourcePosition;
+            syntaxIf->condition = arguments[0];
+            syntaxIf->trueCase = arguments[1];
+            syntaxIf->falseCase = arguments[2];
+            return syntaxIf;
+        });
 }
     
-void IntrinsicsEnvironment::addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature impl)
+void IntrinsicsEnvironment::addPrimitiveToClass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature impl)
 {
-    auto primitive = std::make_shared<PrimitiveMethod> (impl);
+    auto primitive = std::make_shared<PrimitiveMethod> (functionalType, impl);
     auto &clazz = intrinsicClasses[className];
     clazz->methodDict[Symbol::internString(selector)] = primitive;
 }
 
-void IntrinsicsEnvironment::addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature impl)
+void IntrinsicsEnvironment::addPrimitiveToMetaclass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature impl)
 {
-    auto primitive = std::make_shared<PrimitiveMethod> (impl);
+    auto primitive = std::make_shared<PrimitiveMethod> (functionalType, impl);
     auto &clazz = intrinsicMetaclasses[className];
     clazz->methodDict[Symbol::internString(selector)] = primitive;
 }
 
-void IntrinsicsEnvironment::addPrimitiveGlobalMacro(const std::string &name, PrimitiveMacroImplementationSignature impl)
+void IntrinsicsEnvironment::addPrimitiveGlobalMacro(const std::string &name, ValuePtr functionalType, PrimitiveMacroImplementationSignature impl)
 {
-    auto primitiveMacro = std::make_shared<PrimitiveMacroMethod> (impl);
+    auto primitiveMacro = std::make_shared<PrimitiveMacroMethod> (functionalType, impl);
     addLocalSymbolBinding(Symbol::internString(name), primitiveMacro);
 }
 

@@ -218,9 +218,9 @@ namespace Sysmel
         void buildObjectPrimitives();
         void buildValuePrimitives();
         void buildBasicMacros();
-        void addPrimitiveToClass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
-        void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, PrimitiveImplementationSignature);
-        void addPrimitiveGlobalMacro(const std::string &name, PrimitiveMacroImplementationSignature);
+        void addPrimitiveToClass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
+        void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
+        void addPrimitiveGlobalMacro(const std::string &name, ValuePtr functionalType, PrimitiveMacroImplementationSignature);
 
         static IntrinsicsEnvironmentPtr singleton;
         std::map<std::string, ClassPtr> intrinsicClasses;
