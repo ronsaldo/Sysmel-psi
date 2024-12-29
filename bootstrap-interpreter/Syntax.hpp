@@ -406,10 +406,7 @@ namespace Sysmel
             // Do we have a name?
             SymbolPtr name;
             if(nameExpression)
-            {
                 name = nameExpression->asAnalyzedSymbolValue();
-                //printf("Name expresssion: %s | %s\n", nameExpression->printString().c_str(), nameExpression->asAnalyzedSymbolValue()->printString().c_str());
-            }
 
             // Construct the Pi type of the lambda.
             auto semanticPi = std::make_shared<SemanticPi> ();
@@ -425,7 +422,7 @@ namespace Sysmel
 
             if(isFixpoint && name)
             {
-                auto fixpointBinding = std::make_shared<SymbolFixpointBinding> ();
+                fixpointBinding = std::make_shared<SymbolFixpointBinding> ();
                 fixpointBinding->sourcePosition = sourcePosition;
                 fixpointBinding->name = name;
                 fixpointBinding->typeExpression = functionType;
@@ -1471,6 +1468,10 @@ namespace Sysmel
             {
                 auto trueResultType = analyzedTrueCase->getTypeOrClass()->asTypeValue();
                 auto falseResultType = analyzedFalseCase->getTypeOrClass()->asTypeValue();
+
+                //printf("trueResultType %s\n", trueResultType->printString().c_str());
+                //printf("falseResultType %s\n", falseResultType->printString().c_str());
+                //printf("analyzedFalseCase %s\n", analyzedFalseCase->printString().c_str());
                 if(trueResultType == falseResultType)
                 {
                     resultType = trueResultType;

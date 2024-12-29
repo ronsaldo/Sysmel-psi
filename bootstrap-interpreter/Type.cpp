@@ -175,4 +175,20 @@ void SimpleFunctionType::printStringOn(std::ostream &out) const
     resultType->printStringOn(out);
 }
 
+ArgumentTypeAnalysisContextPtr SimpleFunctionType::createArgumentTypeAnalysisContext()
+{
+    auto context = std::make_shared<SimpleFunctionArgumentTypeAnalysisContext> ();
+    context->simpleFunctionalType = std::static_pointer_cast<SimpleFunctionType> (shared_from_this());
+    return context;
+}
+ValuePtr SimpleFunctionArgumentTypeAnalysisContext::coerceArgumentWithIndex(size_t index, ValuePtr argument)
+{
+    return argument->coerceIntoExpectedTypeAt(simpleFunctionalType->argumentTypes[index], argument->getSourcePosition());
+}
+
+ValuePtr SimpleFunctionArgumentTypeAnalysisContext::getResultType()
+{
+    return simpleFunctionalType->resultType;
+}
+
 } //end of namespace Sysmel

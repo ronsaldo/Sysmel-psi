@@ -25,8 +25,10 @@ typedef std::shared_ptr<class SourcePosition> SourcePositionPtr;
 typedef std::shared_ptr<class SyntaxError> SyntaxErrorPtr; 
 typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
 typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
+typedef std::shared_ptr<class SymbolFixpointBinding> SymbolFixpointBindingPtr;
 typedef std::shared_ptr<class ArgumentTypeAnalysisContext> ArgumentTypeAnalysisContextPtr;
 typedef std::shared_ptr<class MacroContext> MacroContextPtr;
+typedef std::shared_ptr<class SimpleFunctionType> SimpleFunctionTypePtr;
 
 class Value : public std::enable_shared_from_this<Value>
 {
@@ -163,6 +165,15 @@ public:
     virtual ValuePtr getResultType();
 };
 
+class SimpleFunctionArgumentTypeAnalysisContext : public ArgumentTypeAnalysisContext
+{
+public:
+    virtual ValuePtr coerceArgumentWithIndex(size_t index, ValuePtr argument) override;
+    virtual ValuePtr getResultType() override;
+
+    SimpleFunctionTypePtr simpleFunctionalType;
+};
+
 class LambdaValue : public Value
 {
 public:
@@ -173,6 +184,7 @@ public:
     SymbolPtr name;
     ValuePtr type;
     EnvironmentPtr closure;
+    SymbolFixpointBindingPtr fixpointBinding;
     std::vector<SymbolArgumentBindingPtr> argumentBindings;
     ValuePtr body; 
 };

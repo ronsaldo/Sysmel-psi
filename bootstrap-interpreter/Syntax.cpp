@@ -41,11 +41,49 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
     }
     
     auto analyzedReceiver = receiver->analyzeInEnvironment(environment);
-    auto receiverTypeOrClass = analyzedReceiver->getTypeOrClass();
+    auto receiverTypeOrClass = analyzedReceiver->getTypeOrClass()->asTypeValue();
 
-    std::vector<ValuePtr> analyzedArguments;
-    analyzedArguments.reserve(arguments.size());
-    for(auto argument : arguments)
+    auto method = receiverTypeOrClass->lookupSelector(analyzedSelectorSymbol);
+    if(method)
+    {
+        auto methodType = method->getType()->asTypeValue(); 
+        auto argContext = methodType->createArgumentTypeAnalysisContext();
+
+        std::vector<ValuePtr> analyzedArguments;
+        analyzedArguments.reserve(arguments.size());
+
+        analyzedReceiver = argContext->coerceArgumentWithIndex(0, analyzedReceiver);
+        for(size_t i = 0; i < arguments.size(); ++i)
+        {
+            auto analyzedArgument = arguments[i]->analyzeInEnvironment(environment);
+            analyzedArgument = argContext->coerceArgumentWithIndex(i + 1, analyzedArgument);
+            analyzedArguments.push_back(analyzedArgument);
+
+        }
+
+        auto analyzedMessage = std::make_shared<SemanticMessageSend> ();
+        analyzedMessage->sourcePosition = sourcePosition;
+        analyzedMessage->receiver = analyzedReceiver;
+        analyzedMessage->selector = analyzedSelectorSymbol;
+        analyzedMessage->arguments.swap(analyzedArguments);
+        analyzedMessage->type = argContext->getResultType();
+        return analyzedMessage;
+    }
+    else if(receiverTypeOrClass->isClass())
+    {
+        abort();
+    }
+    else
+    {
+        throwExceptionWithMessageAt(("There is no method with selector " + analyzedSelectorSymbol->printString() + " in the value.").c_str(), sourcePosition);
+    }
+
+    abort();
+/*    std::vector<ValuePtr> analyzedArguments;
+    analyzedArguments.reserve(1 + arguments.size());
+    analyzedArguments.push
+
+    for(size_t i = 1; i < analyzedArguments.size(); ++i)
     {
         analyzedArguments.push_back(argument->analyzeInEnvironment(environment));
     }
@@ -60,6 +98,7 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
     analyzedMessage->type = GradualType::uniqueInstance();
 
     return analyzedMessage;
+*/
 }
 
 ValuePtr SyntaxMessageCascade::analyzeInEnvironment(const EnvironmentPtr &environment)

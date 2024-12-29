@@ -209,6 +209,7 @@ namespace Sysmel
         static IntrinsicsEnvironmentPtr uniqueInstance();
 
         ClassPtr lookupValidClass(const std::string &s);
+        MetaclassPtr lookupValidMetaclass(const std::string &s);
         void addIntrinsicClass(const ClassPtr &intrinsicClass);
 
     private:
@@ -327,14 +328,25 @@ namespace Sysmel
             argumentBindings.insert(std::make_pair(binding, value));
         }
 
+        void setFixpointBindingValue(const SymbolFixpointBindingPtr &newFixpointBinding, const ValuePtr &bindingValue)
+        {
+            fixpointBinding = newFixpointBinding;
+            fixpointBindingValue = bindingValue;
+        }
+
         virtual ValuePtr lookupValueForBinding(ValuePtr binding) override
         {
+            if(binding && binding == fixpointBinding)
+                return fixpointBindingValue;
+
             auto it = argumentBindings.find(std::static_pointer_cast<SymbolArgumentBinding> (binding));
             if(it != argumentBindings.end())
                 return it->second;
             return nullptr;
         }
 
+        SymbolFixpointBindingPtr fixpointBinding;
+        ValuePtr fixpointBindingValue;
         SourcePositionPtr sourcePosition;
         std::map<SymbolArgumentBindingPtr, ValuePtr> argumentBindings;
     };

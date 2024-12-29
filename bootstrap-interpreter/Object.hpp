@@ -221,6 +221,10 @@ namespace Sysmel
 
         virtual const char *getClassName() const override { return "PrimitiveMethod"; }
         virtual ValuePtr applyWithArguments(const std::vector<ValuePtr> &arguments) override;
+        virtual ValuePtr getType() const override
+        {
+            return type;
+        }
 
         ValuePtr type;
         PrimitiveImplementationSignature implementation;
@@ -241,6 +245,11 @@ namespace Sysmel
         virtual const char *getClassName() const override { return "PrimitiveMacroMethod"; }
         virtual bool isMacro() const override { return true;};
         virtual ValuePtr applyMacroWithContextAndArguments(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments) override;
+
+        virtual ValuePtr getType() const override
+        {
+            return type;
+        }
 
         ValuePtr type;
         PrimitiveMacroImplementationSignature implementation;

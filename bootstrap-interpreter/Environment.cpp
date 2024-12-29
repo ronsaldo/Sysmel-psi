@@ -29,7 +29,7 @@ ValuePtr SymbolFixpointBinding::analyzeIdentifierReferenceInEnvironment(const Va
 {
     (void)syntaxNode;
     (void)environment;
-    auto semanticReference = std::make_shared<SemanticIdentifierReference> ();
+    auto semanticReference = std::make_shared<SemanticIdentifierReference>();
     semanticReference->sourcePosition =  sourcePosition;
     semanticReference->type = typeExpression->analyzeInEnvironment(environment);
     semanticReference->identifierBinding = shared_from_this();
@@ -40,6 +40,13 @@ ClassPtr IntrinsicsEnvironment::lookupValidClass(const std::string &name)
 {
     auto it = intrinsicClasses.find(name);
     sysmelAssert(it != intrinsicClasses.end());
+    return it->second;
+}
+
+MetaclassPtr IntrinsicsEnvironment::lookupValidMetaclass(const std::string &name)
+{
+    auto it = intrinsicMetaclasses.find(name);
+    sysmelAssert(it != intrinsicMetaclasses.end());
     return it->second;
 }
 
@@ -335,7 +342,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
     // Stdio
     addPrimitiveToMetaclass("Stdio", "stdin",
         SimpleFunctionType::make(
-                lookupValidClass("Stdio"), "self",
+                lookupValidMetaclass("Stdio"), "self",
                 lookupValidClass("BinaryFileStream")),
         [](const std::vector<ValuePtr> &arguments) {
             (void)arguments;
@@ -343,7 +350,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         });
     addPrimitiveToMetaclass("Stdio", "stdout",
         SimpleFunctionType::make(
-            lookupValidClass("Stdio"), "self",
+            lookupValidMetaclass("Stdio"), "self",
             lookupValidClass("BinaryFileStream")),
         [](const std::vector<ValuePtr> &arguments) {
             (void)arguments;
@@ -351,7 +358,7 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         });
     addPrimitiveToMetaclass("Stdio", "stderr",
         SimpleFunctionType::make(
-                lookupValidClass("Stdio"), "self",
+                lookupValidMetaclass("Stdio"), "self",
                 lookupValidClass("BinaryFileStream")),
         [](const std::vector<ValuePtr> &arguments) {
             (void)arguments;

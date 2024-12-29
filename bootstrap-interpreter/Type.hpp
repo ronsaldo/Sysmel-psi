@@ -282,6 +282,7 @@ class SimpleFunctionType : public TypeBehavior
 {
 public:
     virtual void printStringOn(std::ostream &out) const override;
+    virtual ArgumentTypeAnalysisContextPtr createArgumentTypeAnalysisContext();
 
     std::vector<ValuePtr> argumentTypes;
     std::vector<SymbolPtr> argumentNames;

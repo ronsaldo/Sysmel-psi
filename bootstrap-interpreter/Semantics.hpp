@@ -218,16 +218,25 @@ public:
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
         (void)environment;
+        if(simpleFunctionTypeCache)
+            return simpleFunctionTypeCache;
+
         auto simpleFunctionType = std::make_shared<SimpleFunctionType> ();
         simpleFunctionType->argumentTypes = argumentTypes;
         simpleFunctionType->argumentNames = argumentNames;
         simpleFunctionType->resultType = resultType;
-        return simpleFunctionType;
+        return simpleFunctionTypeCache = simpleFunctionType;
+    }
+
+    virtual ArgumentTypeAnalysisContextPtr createArgumentTypeAnalysisContext()
+    {
+        return evaluateInEnvironment(nullptr)->createArgumentTypeAnalysisContext();
     }
 
     std::vector<ValuePtr> argumentTypes;
     std::vector<SymbolPtr> argumentNames;
     ValuePtr resultType;
+    SimpleFunctionTypePtr simpleFunctionTypeCache;
 };
 
 class SemanticFunctionalValue : public SemanticValue
@@ -276,6 +285,7 @@ public:
         lambdaValue->closure = closure;
         lambdaValue->body = body;
         lambdaValue->argumentBindings = argumentBindings;
+        lambdaValue->fixpointBinding = fixpointBinding;
     
         return lambdaValue;
     }

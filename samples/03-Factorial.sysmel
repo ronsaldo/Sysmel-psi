@@ -4,4 +4,6 @@
     else: factorial(n-1) * n
 }.
 
-Stdio stdout nextPutAll: factorial(10) printString; nextPut: '\n'
+Stdio stdout nextPutAll: (10 <= 0) printString; nextPut: '\n'.
+
+Stdio stdout nextPutAll: factorial(10) printString; nextPut: '\n'.

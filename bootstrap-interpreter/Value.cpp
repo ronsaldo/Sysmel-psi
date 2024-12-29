@@ -204,6 +204,8 @@ ValuePtr LambdaValue::applyWithArguments(const std::vector<ValuePtr> &arguments)
         throwExceptionWithMessage("Lambda argument count mismatch.");
 
     auto activationEnvironment = std::make_shared<FunctionalActivationEnvironment> (closure, sourcePosition);
+    if(fixpointBinding)
+        activationEnvironment->setFixpointBindingValue(fixpointBinding, shared_from_this());
     for(size_t i = 0; i < argumentBindings.size(); ++i)
     {
         auto binding = argumentBindings[i];
