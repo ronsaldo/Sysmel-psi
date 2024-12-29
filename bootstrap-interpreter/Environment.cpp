@@ -236,6 +236,9 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         });
 
     // Integer
+    auto integerUnaryArithmeticType = SimpleFunctionType::make(
+            lookupValidClass("Integer"), "self",
+            lookupValidClass("Integer"));
     auto integerBinaryArithmeticType = SimpleFunctionType::make(
             lookupValidClass("Integer"), "self",
             lookupValidClass("Integer"), "other",
@@ -245,6 +248,14 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
             lookupValidClass("Integer"), "other",
             lookupValidClass("Boolean"));
 
+    addPrimitiveToClass("Integer", "negated", integerUnaryArithmeticType, [](const std::vector<ValuePtr> &arguments){
+        sysmelAssert(arguments.size() == 1);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+
+        auto result = std::make_shared<Integer> ();
+        result->value = -left->value;
+        return result;
+    });
     addPrimitiveToClass("Integer", "+", integerBinaryArithmeticType, [](const std::vector<ValuePtr> &arguments){
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
@@ -314,6 +325,26 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         auto right = std::static_pointer_cast<Integer> (arguments[1]);
         return Boolean::encode(left->value >= right->value);
     });
+    addPrimitiveToClass("Integer", "asInteger", 
+        SimpleFunctionType::make(
+            lookupValidClass("Integer"), "self",
+            lookupValidClass("Integer")),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Integer> (arguments[0]);
+            return self;
+        });
+    addPrimitiveToClass("Integer", "asFloat", 
+        SimpleFunctionType::make(
+                lookupValidClass("Integer"), "self",
+                lookupValidClass("Float")),
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Integer> (arguments[0]);
+            auto floatObject = std::make_shared<Float> ();
+            floatObject->value = self->value.asDouble();
+            return floatObject;
+        });
 
     // Stream
     addPrimitiveToClass("Stream", "nextPut:",
