@@ -18,6 +18,7 @@ namespace Sysmel
     typedef std::shared_ptr<class SymbolValueBinding> SymbolValueBindingPtr;
     typedef std::shared_ptr<class SymbolCaptureBinding> SymbolCaptureBindingPtr;
     typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
+    typedef std::shared_ptr<class SymbolFixpointBinding> SymbolFixpointBindingPtr;
 
     class SymbolValueBinding : public Value
     {
@@ -45,6 +46,26 @@ namespace Sysmel
                 out << " : ";
             if(type)
                 type->printStringOn(out);
+        }
+
+        virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
+    };
+
+    class SymbolFixpointBinding : public Value
+    {
+    public:
+        SymbolPtr name;
+        ValuePtr typeExpression;
+
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            if(name)
+                name->printStringOn(out);
+
+            if(typeExpression && name)
+                out << " : ";
+            if(typeExpression)
+                typeExpression->printStringOn(out);
         }
 
         virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
@@ -269,7 +290,16 @@ namespace Sysmel
             argumentBindings.push_back(analyzedArgument);
         }
 
+        void addFixpointBinding(const SymbolFixpointBindingPtr &fixpointBinding)
+        {
+            sysmelAssert(!this->fixpointBinding);
+            if(fixpointBinding->name)
+                addLocalSymbolBinding(fixpointBinding->name, fixpointBinding);
+            this->fixpointBinding = fixpointBinding;
+        }
+
         SourcePositionPtr sourcePosition;
+        SymbolFixpointBindingPtr fixpointBinding;
         std::vector<ValuePtr> argumentBindings;
     };
 

@@ -25,6 +25,17 @@ ValuePtr SymbolArgumentBinding::analyzeIdentifierReferenceInEnvironment(const Va
     return semanticReference;
 }
 
+ValuePtr SymbolFixpointBinding::analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment)
+{
+    (void)syntaxNode;
+    (void)environment;
+    auto semanticReference = std::make_shared<SemanticIdentifierReference> ();
+    semanticReference->sourcePosition =  sourcePosition;
+    semanticReference->type = typeExpression->analyzeInEnvironment(environment);
+    semanticReference->identifierBinding = shared_from_this();
+    return semanticReference;
+}
+
 ClassPtr IntrinsicsEnvironment::lookupValidClass(const std::string &name)
 {
     auto it = intrinsicClasses.find(name);

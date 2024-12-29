@@ -227,6 +227,7 @@ public:
     bool isVariadic = false;
     std::vector<SymbolCaptureBindingPtr> captureBindings;
     ValuePtr body;
+    SymbolFixpointBindingPtr fixpointBinding;
 };
 
 class SemanticLambda : public SemanticFunctionalValue

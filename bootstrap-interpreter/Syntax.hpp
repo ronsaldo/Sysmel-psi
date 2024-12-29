@@ -406,7 +406,29 @@ namespace Sysmel
             // Do we have a name?
             SymbolPtr name;
             if(nameExpression)
+            {
                 name = nameExpression->asAnalyzedSymbolValue();
+                //printf("Name expresssion: %s | %s\n", nameExpression->printString().c_str(), nameExpression->asAnalyzedSymbolValue()->printString().c_str());
+            }
+
+            // Construct the Pi type of the lambda.
+            auto semanticPi = std::make_shared<SemanticPi> ();
+            semanticPi->sourcePosition = sourcePosition;
+            semanticPi->closure = environment;
+            semanticPi->argumentBindings = analyzedArguments;
+            semanticPi->isVariadic = isVariadic;
+            semanticPi->body = analyzedResultType;
+
+            SymbolFixpointBindingPtr fixpointBinding;
+
+            if(isFixpoint && name)
+            {
+                auto fixpointBinding = std::make_shared<SymbolFixpointBinding> ();
+                fixpointBinding->sourcePosition = sourcePosition;
+                fixpointBinding->name = name;
+                fixpointBinding->typeExpression = semanticPi;
+                functionalEnvironment->addFixpointBinding(fixpointBinding);
+            }
 
             // Analyze the body
             auto bodyEnvironment = std::make_shared<LexicalEnvironment> (functionalEnvironment, sourcePosition);
@@ -429,14 +451,6 @@ namespace Sysmel
                 analyzedResultType = literal;
             }
 
-            // Construct the Pi type of the lambda.
-            auto semanticPi = std::make_shared<SemanticPi> ();
-            semanticPi->sourcePosition = sourcePosition;
-            semanticPi->closure = environment;
-            semanticPi->argumentBindings = analyzedArguments;
-            semanticPi->isVariadic = isVariadic;
-            semanticPi->body = analyzedResultType;
-
             auto semanticLambda = std::make_shared<SemanticLambda> ();
             semanticLambda->sourcePosition = sourcePosition;
             semanticLambda->closure = environment;
@@ -444,6 +458,7 @@ namespace Sysmel
             semanticLambda->argumentBindings = analyzedArguments;
             semanticLambda->isVariadic = isVariadic;
             semanticLambda->body = analyzedBody;
+            semanticLambda->fixpointBinding = fixpointBinding;
 
             return semanticLambda;
         }
@@ -1051,6 +1066,11 @@ namespace Sysmel
             return semanticLiteral;
         }
 
+        SymbolPtr asAnalyzedSymbolValue()
+        {
+            return Symbol::internString(value);
+        }
+
         std::string value;
     };
 
@@ -1212,6 +1232,7 @@ namespace Sysmel
             }
 
             auto application = std::make_shared<SemanticApplication> ();
+            application->sourcePosition = sourcePosition;
             application->type = argumentAnalysisContext->getResultType();
             application->functional = analyzedFunctional;
             application->arguments.swap(analyzedArguments);
