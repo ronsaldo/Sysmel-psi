@@ -46,6 +46,8 @@ namespace Sysmel
             return getClass();
         }
 
+        virtual ValuePtr asTypeValue() { return shared_from_this(); }
+
         virtual bool isSatisfiedByType(const ValuePtr &sourceType)
         {
             auto myClass = getClass();
@@ -172,11 +174,21 @@ namespace Sysmel
     class Boolean : public Object
     {
     public:
+        virtual const char *getClassName() const override { return "Boolean"; }
+
+        static ValuePtr encode(bool value);
     };
 
     class True : public Object
     {
     public:
+        virtual const char *getClassName() const override { return "True"; }
+
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "true";
+        }
+
         virtual bool isTrue() const { return true; };
 
         static TruePtr uniqueInstance();
@@ -187,6 +199,13 @@ namespace Sysmel
     class False : public Object
     {
     public:
+        virtual const char *getClassName() const override { return "False"; }
+
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "false";
+        }
+
         virtual bool isFalse() const { return true; };
 
         static FalsePtr uniqueInstance();

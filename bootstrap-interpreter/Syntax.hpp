@@ -1439,17 +1439,15 @@ namespace Sysmel
             ValuePtr analyzedFalseCase;
             if(falseCase)
             {
-                auto lexicalEnvironment = std::make_shared<LexicalEnvironment> (environment, trueCase->sourcePosition);
+                auto lexicalEnvironment = std::make_shared<LexicalEnvironment> (environment, falseCase->sourcePosition);
                 analyzedFalseCase = falseCase->analyzeInEnvironment(lexicalEnvironment);
             }
-            auto resultType = IntrinsicsEnvironment::uniqueInstance()->lookupLocalSymbol(Symbol::internString("Void"));
+            ValuePtr resultType = VoidType::uniqueInstance();
             bool returnsValue = false;
             if(analyzedTrueCase && analyzedFalseCase)
             {
-                auto trueResultType = analyzedTrueCase->getTypeOrClass();
-                auto falseResultType = analyzedFalseCase->getTypeOrClass();
-                printf("trueCase %s falseCase %s\n", analyzedTrueCase->printString().c_str(), analyzedFalseCase->printString().c_str());
-                printf("trueCaseType %s falseCaseType %s\n", trueResultType->printString().c_str(), falseResultType->printString().c_str());
+                auto trueResultType = analyzedTrueCase->getTypeOrClass()->asTypeValue();
+                auto falseResultType = analyzedFalseCase->getTypeOrClass()->asTypeValue();
                 if(trueResultType == falseResultType)
                 {
                     resultType = trueResultType;
@@ -1458,6 +1456,7 @@ namespace Sysmel
             }
 
             auto semanticIf = std::make_shared<SemanticIf> ();
+            semanticIf->type = resultType;
             semanticIf->returnsValue = returnsValue;
             semanticIf->condition = analyzedCondition;
             semanticIf->trueCase = analyzedTrueCase;

@@ -72,7 +72,7 @@ BottomTypePtr BottomType::uniqueInstance()
     return singletonValue;
 }
 
-// Bottom type
+// Void type
 VoidTypePtr VoidType::singletonValue;
 VoidTypePtr VoidType::uniqueInstance()
 {
@@ -80,6 +80,21 @@ VoidTypePtr VoidType::uniqueInstance()
         singletonValue = std::make_shared<VoidType> ();
     return singletonValue;
 }
+
+// Void value
+ValuePtr VoidValue::getType() const
+{
+    return VoidType::uniqueInstance();
+}
+
+VoidValuePtr VoidValue::uniqueInstance()
+{
+    if(!singletonValue)
+        singletonValue = std::make_shared<VoidValue> ();
+    return singletonValue;
+}
+
+VoidValuePtr VoidValue::singletonValue;
 
 // Product type
 ValuePtr ProductTypeValue::getType() const

@@ -12,6 +12,7 @@ typedef std::shared_ptr<class TypeUniverse> TypeUniversePtr;
 typedef std::shared_ptr<class GradualType> GradualTypePtr;
 typedef std::shared_ptr<class UnitType> UnitTypePtr;
 typedef std::shared_ptr<class BottomType> BottomTypePtr;
+typedef std::shared_ptr<class VoidValue> VoidValuePtr;
 typedef std::shared_ptr<class VoidType> VoidTypePtr;
 typedef std::shared_ptr<class ProductType> ProductTypePtr;
 typedef std::shared_ptr<class SumType> SumTypePtr;
@@ -99,6 +100,8 @@ public:
 class UnitType : public BasicType
 {
 public:
+    virtual ValuePtr asTypeValue() { return shared_from_this(); }
+
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "UnitType";
@@ -135,9 +138,26 @@ private:
     static VoidTypePtr singletonValue;
 };
 
+class VoidValue : public Value
+{
+public:
+    virtual ValuePtr getType() const override;
+
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "void";
+    }
+
+    static VoidValuePtr uniqueInstance();
+private:
+    static VoidValuePtr singletonValue;
+};
+
 class GradualType : public BasicType
 {
 public:
+    virtual ValuePtr asTypeValue() { return shared_from_this(); }
+
     virtual bool isType() const override { return true; }
     virtual bool isGradualType() const {return true;}
     virtual ValuePtr getType();

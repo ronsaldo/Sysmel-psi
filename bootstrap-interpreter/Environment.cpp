@@ -66,6 +66,7 @@ void IntrinsicsEnvironment::buildBasicTypes()
     addLocalSymbolBinding(Symbol::internString("Void"),       VoidType::uniqueInstance());
     addLocalSymbolBinding(Symbol::internString("true"),       True::uniqueInstance());
     addLocalSymbolBinding(Symbol::internString("false"),      False::uniqueInstance());
+    addLocalSymbolBinding(Symbol::internString("void"),       VoidValue::uniqueInstance());
 }
 
 void IntrinsicsEnvironment::buildMetaHierarchy()
@@ -228,7 +229,30 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value % right->value;
         return result;
     });
-    
+    addPrimitiveToClass("Integer", "<", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+        return Boolean::encode(left->value < right->value);
+    });
+    addPrimitiveToClass("Integer", "<=", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+        return Boolean::encode(left->value <= right->value);
+    });
+    addPrimitiveToClass("Integer", ">", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+        return Boolean::encode(left->value > right->value);
+    });
+    addPrimitiveToClass("Integer", ">=", [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+        return Boolean::encode(left->value >= right->value);
+    });
 
     // Stream
     addPrimitiveToClass("Stream", "nextPut:", [](const std::vector<ValuePtr> &arguments) {

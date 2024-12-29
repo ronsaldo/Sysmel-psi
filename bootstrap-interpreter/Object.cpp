@@ -21,6 +21,14 @@ UndefinedObjectPtr UndefinedObject::uniqueInstance()
 
 UndefinedObjectPtr UndefinedObject::singleton;
 
+ValuePtr Boolean::encode(bool value)
+{
+    if (value)
+        return True::uniqueInstance();
+    else
+        return False::uniqueInstance();
+}
+
 TruePtr True::uniqueInstance()
 {
     if(!singleton)

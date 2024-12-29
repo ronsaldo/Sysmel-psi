@@ -5,6 +5,7 @@
 
 #include "Object.hpp"
 #include "Environment.hpp"
+#include "Assert.hpp"
 
 namespace Sysmel
 {
@@ -334,7 +335,7 @@ public:
         return value->asAnalyzedSymbolValue(); 
     }
 
-    virtual ValuePtr asTypeValue() { return value->asTypeValue(); }
+    virtual ValuePtr asTypeValue() override { return value->asTypeValue(); }
 
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
@@ -488,26 +489,6 @@ public:
         return foundValue;
     }
 
-    virtual ValuePtr getType() const override
-    {
-        return identifierBinding->getType();
-    }
-
-    virtual ValuePtr getClass() const override
-    {
-        return identifierBinding->getClass();
-    }
-
-    virtual ValuePtr getClassOrType() const override
-    {
-        return identifierBinding->getClassOrType();
-    }
-
-    virtual ValuePtr getTypeOrClass() const override
-    {
-        return identifierBinding->getTypeOrClass();
-    }
-
     ValuePtr identifierBinding;
 };
 
@@ -516,7 +497,26 @@ class SemanticIf : public SemanticValue
 public:
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
-        abort();
+        ValuePtr resultValue = VoidValue::uniqueInstance();
+        auto conditionValue = condition->evaluateInEnvironment(environment);
+        
+        ValuePtr caseToEvaluate;
+        if(conditionValue->isTrue())
+            caseToEvaluate = trueCase;
+        else if(conditionValue->isFalse())
+            caseToEvaluate = falseCase;
+
+        if(caseToEvaluate)
+        {
+            auto caseResult = caseToEvaluate->evaluateInEnvironment(environment);
+            resultValue = caseResult;
+        }
+        else
+        {
+            sysmelAssert(!returnsValue);
+        }
+        
+        return resultValue;
     }
 
     bool returnsValue = false;
