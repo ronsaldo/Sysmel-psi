@@ -204,6 +204,32 @@ public:
     bool isExistential = false;
 };
 
+class SemanticSimpleFunctionType : public SemanticValue
+{
+public:
+    virtual const char *getClassName() const { return "SemanticSimpleFunctionType"; }
+
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticSimpleFunctionType(";
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        (void)environment;
+        auto simpleFunctionType = std::make_shared<SimpleFunctionType> ();
+        simpleFunctionType->argumentTypes = argumentTypes;
+        simpleFunctionType->argumentNames = argumentNames;
+        simpleFunctionType->resultType = resultType;
+        return simpleFunctionType;
+    }
+
+    std::vector<ValuePtr> argumentTypes;
+    std::vector<SymbolPtr> argumentNames;
+    ValuePtr resultType;
+};
+
 class SemanticFunctionalValue : public SemanticValue
 {
 public:
@@ -265,6 +291,23 @@ public:
     virtual void printStringOn(std::ostream &out) const override
     {
         out << "SemanticPiValue(";
+        if(name)
+        {
+            name->printStringOn(out);
+            out << ' ';  
+        }
+        out << '(';
+        bool isFirst = true;
+        for(auto &binding : argumentBindings)
+        {
+            if(isFirst)
+                isFirst = false;
+            else
+                out << ", ";
+            binding->printStringOn(out);
+        }
+        out << ") => ";
+        body->printStringOn(out);
         out << ")";
     }
 
@@ -276,6 +319,32 @@ public:
         pi->arguments = argumentBindings;
         pi->resultType = body;
         return pi;
+    }
+
+    virtual ValuePtr reduce()
+    {
+        std::vector<ValuePtr> argumentTypes;
+        std::vector<SymbolPtr> argumentNames;
+        argumentTypes.reserve(argumentBindings.size());
+        for(auto &binding : argumentBindings)
+        {
+            auto argType = binding->getType()->asTypeValue();
+            if(!argType)
+                return shared_from_this();
+
+            argumentTypes.push_back(argType);
+            argumentNames.push_back(binding->name);
+        }
+
+        ValuePtr resultType = body->asTypeValue();
+        if(!resultType)
+            return shared_from_this();
+
+        auto reducedType = std::make_shared<SemanticSimpleFunctionType> ();
+        reducedType->argumentTypes = argumentTypes;
+        reducedType->argumentNames = argumentNames;
+        reducedType->resultType = resultType;
+        return reducedType;
     }
 };
 

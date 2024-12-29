@@ -268,8 +268,21 @@ class PiType : public TypeBehavior
 public:
     virtual void printStringOn(std::ostream &out) const override;
 
+    ValuePtr reduce();
+
     ValuePtr nameExpression;
     std::vector<SymbolArgumentBindingPtr> arguments;
+    ValuePtr resultType;
+};
+
+
+class SimpleFunctionType : public TypeBehavior
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override;
+
+    std::vector<ValuePtr> argumentTypes;
+    std::vector<SymbolPtr> argumentNames;
     ValuePtr resultType;
 };
 

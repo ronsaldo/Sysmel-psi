@@ -152,4 +152,27 @@ void PiType::printStringOn(std::ostream &out) const
     if(resultType)
         resultType->printStringOn(out);
 }
+
+ValuePtr PiType::reduce()
+{
+    return shared_from_this();
+}
+
+void SimpleFunctionType::printStringOn(std::ostream &out) const
+{
+    out << '(';
+    for(size_t i = 0; i < argumentTypes.size(); ++i)
+    {
+        if(i > 0)
+            out << ", ";
+        out << ":(";
+        argumentTypes[i]->printStringOn(out);
+        out << ")";
+        argumentNames[i]->printStringOn(out);
+    }
+
+    out << ") =>";
+    resultType->printStringOn(out);
+}
+
 } //end of namespace Sysmel

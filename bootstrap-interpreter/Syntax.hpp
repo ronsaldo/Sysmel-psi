@@ -419,6 +419,8 @@ namespace Sysmel
             semanticPi->isVariadic = isVariadic;
             semanticPi->body = analyzedResultType;
 
+            auto functionType = semanticPi->reduce();
+
             SymbolFixpointBindingPtr fixpointBinding;
 
             if(isFixpoint && name)
@@ -426,7 +428,7 @@ namespace Sysmel
                 auto fixpointBinding = std::make_shared<SymbolFixpointBinding> ();
                 fixpointBinding->sourcePosition = sourcePosition;
                 fixpointBinding->name = name;
-                fixpointBinding->typeExpression = semanticPi;
+                fixpointBinding->typeExpression = functionType;
                 functionalEnvironment->addFixpointBinding(fixpointBinding);
             }
 
@@ -454,7 +456,7 @@ namespace Sysmel
             auto semanticLambda = std::make_shared<SemanticLambda> ();
             semanticLambda->sourcePosition = sourcePosition;
             semanticLambda->closure = environment;
-            semanticLambda->type = semanticPi;
+            semanticLambda->type = functionType;
             semanticLambda->argumentBindings = analyzedArguments;
             semanticLambda->isVariadic = isVariadic;
             semanticLambda->body = analyzedBody;
@@ -520,7 +522,7 @@ namespace Sysmel
             semanticPi->argumentBindings.swap(analyzedArguments);
             semanticPi->isVariadic = isVariadic;
             semanticPi->body = analyzedBody;
-            return semanticPi;
+            return semanticPi->reduce();
         }
 
         ValuePtr nameExpression;

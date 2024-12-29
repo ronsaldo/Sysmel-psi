@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bootstrap-interpreter",
-            "args": ["samples/02-Factorial.sysmel"],
+            "args": ["-ep", ":x(Integer) :: Integer"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

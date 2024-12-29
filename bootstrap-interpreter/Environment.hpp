@@ -37,6 +37,11 @@ namespace Sysmel
         bool isImplicit = false;
         bool isExistential = false;
 
+        virtual ValuePtr getType() const override
+        {
+            return type;
+        }
+
         virtual void printStringOn(std::ostream &out) const override
         {
             if(name)
