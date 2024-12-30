@@ -3,6 +3,7 @@
 #include "Type.hpp"
 #include "Semantics.hpp"
 #include "Syntax.hpp"
+#include <math.h>
 
 namespace Sysmel
 {
@@ -318,6 +319,18 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         result->value = left->value % right->value;
         return result;
     });
+    addPrimitiveToClass("Integer", "=", integerBinaryComparisonType, [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+        return Boolean::encode(left->value == right->value);
+    });
+    addPrimitiveToClass("Integer", "~=", integerBinaryComparisonType, [](const std::vector<ValuePtr> &arguments) {
+        sysmelAssert(arguments.size() == 2);
+        auto left = std::static_pointer_cast<Integer> (arguments[0]);
+        auto right = std::static_pointer_cast<Integer> (arguments[1]);
+        return Boolean::encode(left->value != right->value);
+    });
     addPrimitiveToClass("Integer", "<", integerBinaryComparisonType, [](const std::vector<ValuePtr> &arguments) {
         sysmelAssert(arguments.size() == 2);
         auto left = std::static_pointer_cast<Integer> (arguments[0]);
@@ -415,13 +428,14 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
         });
 }
 template<typename PrimitiveNumberTypeClass, typename PrimitiveNumberValueClass>
-void buildPrimitiveTypeMethods(IntrinsicsEnvironment *environment,
+void buildPrimitiveNumberTypeMethods(IntrinsicsEnvironment *environment,
     const char *literalSuffix, const char *conversionMethodName)
 {
+    auto primitiveType = PrimitiveNumberTypeClass::uniqueInstance();
     auto integerType = environment->lookupValidClass("Integer");
     auto floatType = environment->lookupValidClass("Float");
     environment->addPrimitiveToClass("Integer", literalSuffix,
-        SimpleFunctionType::make(integerType, "self", PrimitiveNumberTypeClass::uniqueInstance()),
+        SimpleFunctionType::make(integerType, "self", primitiveType),
         [](const std::vector<ValuePtr> &arguments) {
             sysmelAssert(arguments.size() == 1);
             auto self = std::static_pointer_cast<Integer> (arguments[0]);
@@ -431,7 +445,7 @@ void buildPrimitiveTypeMethods(IntrinsicsEnvironment *environment,
         });
 
     environment->addPrimitiveToClass("Integer", conversionMethodName,
-        SimpleFunctionType::make(integerType, "self", PrimitiveNumberTypeClass::uniqueInstance()),
+        SimpleFunctionType::make(integerType, "self", primitiveType),
         [](const std::vector<ValuePtr> &arguments) {
             sysmelAssert(arguments.size() == 1);
             auto self = std::static_pointer_cast<Integer> (arguments[0]);
@@ -441,7 +455,7 @@ void buildPrimitiveTypeMethods(IntrinsicsEnvironment *environment,
         });
 
     environment->addPrimitiveToClass("Float", literalSuffix,
-        SimpleFunctionType::make(floatType, "self", PrimitiveNumberTypeClass::uniqueInstance()),
+        SimpleFunctionType::make(floatType, "self", primitiveType),
         [](const std::vector<ValuePtr> &arguments) {
             sysmelAssert(arguments.size() == 1);
             auto self = std::static_pointer_cast<Float> (arguments[0]);
@@ -451,7 +465,7 @@ void buildPrimitiveTypeMethods(IntrinsicsEnvironment *environment,
         });
 
     environment->addPrimitiveToClass("Float", conversionMethodName,
-        SimpleFunctionType::make(floatType, "self", PrimitiveNumberTypeClass::uniqueInstance()),
+        SimpleFunctionType::make(floatType, "self",primitiveType),
         [](const std::vector<ValuePtr> &arguments) {
             sysmelAssert(arguments.size() == 1);
             auto self = std::static_pointer_cast<Float> (arguments[0]);
@@ -459,26 +473,200 @@ void buildPrimitiveTypeMethods(IntrinsicsEnvironment *environment,
             primitive->value = typename PrimitiveNumberValueClass::ValueType(self->value);
             return primitive;
         });
+
+    auto unaryArithmethicType = SimpleFunctionType::make(primitiveType, "self", primitiveType);
+    auto binaryArithmethicType = SimpleFunctionType::make(primitiveType, "self", primitiveType, "other", primitiveType);
+    auto binaryComparisonType = SimpleFunctionType::make(primitiveType, "self", primitiveType, "other", environment->lookupValidClass("Boolean"));
+    environment->addPrimitiveToType(primitiveType, "negated", unaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = -self->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "+", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value + other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "-", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value - other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "*", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value * other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "/", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value / other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "//", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value / other->value;
+            return result;
+        });
+
+    environment->addPrimitiveToType(primitiveType, "=", binaryComparisonType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            return Boolean::encode(self->value == other->value);
+        });
+    environment->addPrimitiveToType(primitiveType, "~=", binaryComparisonType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            return Boolean::encode(self->value != other->value);
+        });
+    environment->addPrimitiveToType(primitiveType, "<", binaryComparisonType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            return Boolean::encode(self->value < other->value);
+        });
+    environment->addPrimitiveToType(primitiveType, "<=", binaryComparisonType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            return Boolean::encode(self->value <= other->value);
+        });
+    environment->addPrimitiveToType(primitiveType, ">", binaryComparisonType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            return Boolean::encode(self->value > other->value);
+        });
+    environment->addPrimitiveToType(primitiveType, ">=", binaryComparisonType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            return Boolean::encode(self->value >= other->value);
+        });
 }
+
+template<typename PrimitiveNumberTypeClass, typename PrimitiveNumberValueClass>
+void buildPrimitiveIntegerTypeMethods(IntrinsicsEnvironment *environment,
+    const char *literalSuffix, const char *conversionMethodName)
+{
+    buildPrimitiveNumberTypeMethods<PrimitiveNumberTypeClass, PrimitiveNumberValueClass>  (environment, literalSuffix, conversionMethodName);
+
+    auto primitiveType = PrimitiveNumberTypeClass::uniqueInstance();
+    auto unaryArithmethicType = SimpleFunctionType::make(primitiveType, "self", primitiveType);
+    auto binaryArithmethicType = SimpleFunctionType::make(primitiveType, "self", primitiveType, "other", primitiveType);
+
+    environment->addPrimitiveToType(primitiveType, "bitInvert", unaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = ~self->value;
+            return result;
+        });
+
+    environment->addPrimitiveToType(primitiveType, "%", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value % other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "|", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value | other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "&", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value | other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "^", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value ^ other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, "<<", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value << other->value;
+            return result;
+        });
+    environment->addPrimitiveToType(primitiveType, ">>", binaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto other = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[1]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = self->value >> other->value;
+            return result;
+        });
+}
+
+template<typename PrimitiveNumberTypeClass, typename PrimitiveNumberValueClass>
+void buildPrimitiveFloatTypeMethods(IntrinsicsEnvironment *environment,
+    const char *literalSuffix, const char *conversionMethodName)
+{
+    buildPrimitiveNumberTypeMethods<PrimitiveNumberTypeClass, PrimitiveNumberValueClass>  (environment, literalSuffix, conversionMethodName);
+
+    auto primitiveType = PrimitiveNumberTypeClass::uniqueInstance();
+    auto unaryArithmethicType = SimpleFunctionType::make(primitiveType, "self", primitiveType);
+    environment->addPrimitiveToType(primitiveType, "sqrt", unaryArithmethicType,
+        [](const std::vector<ValuePtr> &arguments) {
+            auto self  = std::static_pointer_cast<PrimitiveNumberValueClass> (arguments[0]);
+            auto result = std::make_shared<PrimitiveNumberValueClass> ();
+            result->value = sqrt(self->value);
+            return result;
+        });
+}
+
 
 void IntrinsicsEnvironment::buildValuePrimitives()
 {
-    buildPrimitiveTypeMethods<PrimitiveUInt8Type,  PrimitiveUInt8Value>  (this, "u8", "asUInt8");
-    buildPrimitiveTypeMethods<PrimitiveUInt16Type, PrimitiveUInt16Value> (this, "u16", "asUInt16");
-    buildPrimitiveTypeMethods<PrimitiveUInt32Type, PrimitiveUInt32Value> (this, "u32", "asUInt32");
-    buildPrimitiveTypeMethods<PrimitiveUInt64Type, PrimitiveUInt64Value> (this, "u64", "asUInt64");
+    buildPrimitiveIntegerTypeMethods<PrimitiveUInt8Type,  PrimitiveUInt8Value>  (this, "u8", "asUInt8");
+    buildPrimitiveIntegerTypeMethods<PrimitiveUInt16Type, PrimitiveUInt16Value> (this, "u16", "asUInt16");
+    buildPrimitiveIntegerTypeMethods<PrimitiveUInt32Type, PrimitiveUInt32Value> (this, "u32", "asUInt32");
+    buildPrimitiveIntegerTypeMethods<PrimitiveUInt64Type, PrimitiveUInt64Value> (this, "u64", "asUInt64");
 
-    buildPrimitiveTypeMethods<PrimitiveInt8Type,  PrimitiveInt8Value>  (this, "i8",  "asInt8");
-    buildPrimitiveTypeMethods<PrimitiveInt16Type, PrimitiveInt16Value> (this, "i16", "asInt16");
-    buildPrimitiveTypeMethods<PrimitiveInt32Type, PrimitiveInt32Value> (this, "i32", "asInt32");
-    buildPrimitiveTypeMethods<PrimitiveInt64Type, PrimitiveInt64Value> (this, "i64", "asInt64");
+    buildPrimitiveIntegerTypeMethods<PrimitiveInt8Type,  PrimitiveInt8Value>  (this, "i8",  "asInt8");
+    buildPrimitiveIntegerTypeMethods<PrimitiveInt16Type, PrimitiveInt16Value> (this, "i16", "asInt16");
+    buildPrimitiveIntegerTypeMethods<PrimitiveInt32Type, PrimitiveInt32Value> (this, "i32", "asInt32");
+    buildPrimitiveIntegerTypeMethods<PrimitiveInt64Type, PrimitiveInt64Value> (this, "i64", "asInt64");
 
-    buildPrimitiveTypeMethods<PrimitiveChar8Type,  PrimitiveChar8Value>  (this, "c8",  "asChar8");
-    buildPrimitiveTypeMethods<PrimitiveChar16Type, PrimitiveChar16Value> (this, "c16", "asChar16");
-    buildPrimitiveTypeMethods<PrimitiveChar32Type, PrimitiveChar32Value> (this, "c32", "asChar32");
+    buildPrimitiveIntegerTypeMethods<PrimitiveChar8Type,  PrimitiveChar8Value>  (this, "c8",  "asChar8");
+    buildPrimitiveIntegerTypeMethods<PrimitiveChar16Type, PrimitiveChar16Value> (this, "c16", "asChar16");
+    buildPrimitiveIntegerTypeMethods<PrimitiveChar32Type, PrimitiveChar32Value> (this, "c32", "asChar32");
 
-    buildPrimitiveTypeMethods<PrimitiveFloat32Type, PrimitiveFloat32Value> (this, "f32", "asFloat32");
-    buildPrimitiveTypeMethods<PrimitiveFloat64Type, PrimitiveFloat64Value> (this, "f64", "asFloat64");
+    buildPrimitiveFloatTypeMethods<PrimitiveFloat32Type, PrimitiveFloat32Value> (this, "f32", "asFloat32");
+    buildPrimitiveFloatTypeMethods<PrimitiveFloat64Type, PrimitiveFloat64Value> (this, "f64", "asFloat64");
 
 }
 
@@ -500,7 +688,13 @@ void IntrinsicsEnvironment::buildBasicMacros()
             return syntaxIf;
         });
 }
-    
+
+void IntrinsicsEnvironment::addPrimitiveToType(const TypeBehaviorPtr &behavior, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature impl)
+{
+    auto primitive = std::make_shared<PrimitiveMethod> (functionalType, impl);
+    behavior->methodDict[Symbol::internString(selector)] = primitive;
+}
+
 void IntrinsicsEnvironment::addPrimitiveToClass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature impl)
 {
     auto primitive = std::make_shared<PrimitiveMethod> (functionalType, impl);

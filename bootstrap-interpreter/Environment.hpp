@@ -19,6 +19,7 @@ namespace Sysmel
     typedef std::shared_ptr<class SymbolCaptureBinding> SymbolCaptureBindingPtr;
     typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
     typedef std::shared_ptr<class SymbolFixpointBinding> SymbolFixpointBindingPtr;
+    typedef std::shared_ptr<class TypeBehavior> TypeBehaviorPtr;
 
     class SymbolValueBinding : public Value
     {
@@ -44,12 +45,12 @@ namespace Sysmel
 
         virtual void printStringOn(std::ostream &out) const override
         {
-            if(name)
+            if (name)
                 name->printStringOn(out);
 
-            if(type && name)
+            if (type && name)
                 out << " : ";
-            if(type)
+            if (type)
                 type->printStringOn(out);
         }
 
@@ -64,12 +65,12 @@ namespace Sysmel
 
         virtual void printStringOn(std::ostream &out) const override
         {
-            if(name)
+            if (name)
                 name->printStringOn(out);
 
-            if(typeExpression && name)
+            if (typeExpression && name)
                 out << " : ";
-            if(typeExpression)
+            if (typeExpression)
                 typeExpression->printStringOn(out);
         }
 
@@ -212,6 +213,7 @@ namespace Sysmel
         MetaclassPtr lookupValidMetaclass(const std::string &s);
         void addIntrinsicClass(const ClassPtr &intrinsicClass);
 
+        void addPrimitiveToType(const TypeBehaviorPtr &behavior, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
         void addPrimitiveToClass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
         void addPrimitiveToMetaclass(const std::string &className, const std::string &selector, ValuePtr functionalType, PrimitiveImplementationSignature);
         void addPrimitiveGlobalMacro(const std::string &name, ValuePtr functionalType, PrimitiveMacroImplementationSignature);
@@ -286,13 +288,13 @@ namespace Sysmel
 
         virtual FunctionalAnalysisEnvironmentPtr getFunctionalAnalysisEnvironment() override
         {
-            return std::static_pointer_cast<FunctionalAnalysisEnvironment> (shared_from_this());
+            return std::static_pointer_cast<FunctionalAnalysisEnvironment>(shared_from_this());
         }
 
         void addArgumentBinding(const SymbolArgumentBindingPtr &analyzedArgument)
         {
             auto name = analyzedArgument->name;
-            if(name)
+            if (name)
                 addLocalSymbolBinding(name, analyzedArgument);
             argumentBindings.push_back(analyzedArgument);
         }
@@ -300,7 +302,7 @@ namespace Sysmel
         void addFixpointBinding(const SymbolFixpointBindingPtr &fixpointBinding)
         {
             sysmelAssert(!this->fixpointBinding);
-            if(fixpointBinding->name)
+            if (fixpointBinding->name)
                 addLocalSymbolBinding(fixpointBinding->name, fixpointBinding);
             this->fixpointBinding = fixpointBinding;
         }
@@ -321,7 +323,7 @@ namespace Sysmel
 
         virtual FunctionalActivationEnvironmentPtr getFunctionalActivationEnvironment() override
         {
-            return std::static_pointer_cast<FunctionalActivationEnvironment> (shared_from_this());
+            return std::static_pointer_cast<FunctionalActivationEnvironment>(shared_from_this());
         }
 
         void forArgumentBindingSetValue(const SymbolArgumentBindingPtr &binding, ValuePtr value)
@@ -337,11 +339,11 @@ namespace Sysmel
 
         virtual ValuePtr lookupValueForBinding(ValuePtr binding) override
         {
-            if(binding && binding == fixpointBinding)
+            if (binding && binding == fixpointBinding)
                 return fixpointBindingValue;
 
-            auto it = argumentBindings.find(std::static_pointer_cast<SymbolArgumentBinding> (binding));
-            if(it != argumentBindings.end())
+            auto it = argumentBindings.find(std::static_pointer_cast<SymbolArgumentBinding>(binding));
+            if (it != argumentBindings.end())
                 return it->second;
             return nullptr;
         }
