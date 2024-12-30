@@ -53,9 +53,9 @@ namespace Sysmel
         virtual bool isSatisfiedByType(const ValuePtr &sourceType)
         {
             auto myClass = getClass();
-            printf("%s class: %s\n", myClass->printString().c_str(), printString().c_str());
             // TODO: Add gradual check here
             auto otherClass = sourceType->getClass();
+            //printf("%s class: %s. sourceType %s\n", myClass->printString().c_str(), printString().c_str(), sourceType->printString().c_str());
             if (!otherClass)
                 return false;
  
@@ -88,6 +88,19 @@ namespace Sysmel
     {
     public:
         virtual const char *getClassName() const override { return "Behavior"; }
+
+        virtual bool isSatisfiedByType(const ValuePtr &sourceType) override
+        {
+            auto myClass = shared_from_this();
+            // TODO: Add gradual check here
+            auto otherClass = sourceType->asTypeValue();
+            //printf("%s class: %s. sourceType %s\n", myClass->printString().c_str(), printString().c_str(), sourceType->printString().c_str());
+            if (!otherClass)
+                return false;
+ 
+            //return otherClass->isSubclassOf(myClass);
+            return otherClass->isSubclassOf(myClass);
+        }
 
         virtual ValuePtr performWithArgumentsOnInstance(const ValuePtr &receiver, const ValuePtr &selector, const std::vector<ValuePtr> &arguments) override
         {
