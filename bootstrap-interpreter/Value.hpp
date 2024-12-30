@@ -47,6 +47,11 @@ public:
     virtual bool isType() const { return false; }
     virtual bool isClass() const { return false; }
     virtual bool isTypeOrClass() const { return isType() || isClass(); }
+    
+    virtual void addSubclass(const ValuePtr &subclass)
+    {
+        (void)subclass;
+    }
 
     virtual bool isObject() const { return false; }
     virtual bool isEnvironment() const { return false; }

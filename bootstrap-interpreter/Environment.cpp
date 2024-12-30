@@ -62,6 +62,7 @@ template<typename BaseClass> std::pair<ClassPtr, MetaclassPtr> makeClassAndMetac
     auto clazz = std::make_shared<Class> ();
     clazz->clazz = meta;
     clazz->name = name;
+    clazz->subclasses = std::make_shared<Array> ();
 
     meta->thisClass = clazz;
 
@@ -196,6 +197,16 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
             return behavior;
         });
 
+    addPrimitiveToClass("Behavior", "superclass",
+        SimpleFunctionType::make(
+            lookupValidClass("Behavior"), "self",
+            lookupValidClass("Behavior")),
+
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto behavior = std::static_pointer_cast<Behavior> (arguments[0]);
+            return behavior->superclass;
+        });
     // Object
     addPrimitiveToClass("Object", "printString", 
         SimpleFunctionType::make(

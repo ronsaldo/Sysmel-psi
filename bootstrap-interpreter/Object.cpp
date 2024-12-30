@@ -72,6 +72,10 @@ ValuePtr PrimitiveMacroMethod::applyMacroWithContextAndArguments(const MacroCont
     return implementation(context, arguments);
 }
 
+void Class::addSubclass(const ValuePtr &subclass)
+{
+    subclasses = subclasses->copyWith(subclass);
+}
 
 BinaryFileStreamPtr Stdio::getValidStdinStream()
 {

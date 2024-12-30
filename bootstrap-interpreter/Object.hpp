@@ -21,6 +21,8 @@ namespace Sysmel
     typedef std::shared_ptr<class BinaryStream> BinaryStreamPtr;
     typedef std::shared_ptr<class BinaryFileStream> BinaryFileStreamPtr;
     typedef std::shared_ptr<class MacroContext> MacroContextPtr;
+    typedef std::shared_ptr<class Array> ArrayPtr;
+    typedef std::shared_ptr<class OrderedCollection> OrderedCollectionPtr;
     typedef std::function<ValuePtr(const std::vector<ValuePtr> &arguments)> PrimitiveImplementationSignature;
     typedef std::function<ValuePtr(const MacroContextPtr &context, const std::vector<ValuePtr> &arguments)> PrimitiveMacroImplementationSignature;
 
@@ -51,11 +53,13 @@ namespace Sysmel
         virtual bool isSatisfiedByType(const ValuePtr &sourceType)
         {
             auto myClass = getClass();
+            printf("%s class: %s\n", myClass->printString().c_str(), printString().c_str());
             // TODO: Add gradual check here
             auto otherClass = sourceType->getClass();
             if (!otherClass)
                 return false;
-
+ 
+            //return otherClass->isSubclassOf(myClass);
             return otherClass->isSubclassOf(myClass);
         }
 
@@ -114,9 +118,11 @@ namespace Sysmel
 
         virtual bool isSubclassOf(const ValuePtr &targetSuperclass) override
         {
+            //printf("target %s\n", targetSuperclass->printString().c_str());
             auto currentBehavior = std::static_pointer_cast<Behavior>(shared_from_this());
             while (currentBehavior && !currentBehavior->isNil())
             {
+                //printf("cur %s\n", currentBehavior->printString().c_str());
                 if (currentBehavior == targetSuperclass)
                     return true;
 
@@ -139,6 +145,11 @@ namespace Sysmel
     class Class : public ClassDescription
     {
     public:
+        Class()
+        {
+            subclasses = std::make_shared<Array> ();
+        }
+
         virtual const char *getClassName() const override { return "Class"; }
 
         virtual void printStringOn(std::ostream &out) const override
@@ -146,6 +157,15 @@ namespace Sysmel
             out << name;
         }
 
+        void registerInSuperclass()
+        {
+            if(superclass)
+                superclass->addSubclass(shared_from_this());
+        }
+
+        virtual void addSubclass(const ValuePtr &subclass) override;
+
+        ArrayPtr subclasses;
         std::string name;
     };
 
@@ -398,6 +418,20 @@ namespace Sysmel
             if(index >= values.size())
                 throwExceptionWithMessage("Index is out of bounds.");
             return values[index] = value;
+        }
+
+        ArrayPtr copyWith(const ValuePtr &extraValue)
+        {
+            for(auto &value : values)
+            {
+                if(value == extraValue)
+                    return std::static_pointer_cast<Array> (shared_from_this());
+            }
+
+            auto result = std::make_shared<Array> ();
+            result->values = values;
+            result->values.push_back(extraValue);
+            return result;
         }
         
         std::vector<ValuePtr> values;
