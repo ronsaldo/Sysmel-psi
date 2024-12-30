@@ -72,6 +72,24 @@ namespace Sysmel
             return analyzedSequence;
         }
 
+
+        ValuePtr analyzeAndEvaluateInEnvironment(const EnvironmentPtr &environment) override
+        {
+            std::vector<ValuePtr> analyzedElements;
+            analyzedElements.reserve(elements.size());
+            for (auto &element : elements)
+            {
+                auto analyzedElement = element->analyzeAndEvaluateInEnvironment(environment);
+                analyzedElements.push_back(analyzedElement);
+            }
+
+            auto analyzedSequence = std::make_shared<SemanticValueSequence>();
+            analyzedSequence->type = elements.empty() ? VoidType::uniqueInstance() : analyzedElements.back()->getClassOrType();
+            analyzedSequence->elements.swap(analyzedElements);
+            return analyzedSequence;
+
+        }
+
         std::vector<ValuePtr> elements;
     };
 
