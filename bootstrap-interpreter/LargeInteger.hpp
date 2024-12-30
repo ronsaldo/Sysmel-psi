@@ -41,6 +41,7 @@ struct LargeInteger
     explicit LargeInteger(int32_t value);
     explicit LargeInteger(uint64_t value);
     explicit LargeInteger(int64_t value);
+    explicit LargeInteger(size_t value);
     explicit LargeInteger(bool isNegative, std::vector<uint32_t> &&newWords);
     explicit LargeInteger(bool isNegative, const std::vector<uint32_t> &newWords);
     explicit LargeInteger(const std::string &string, uint8_t radix = 10);
@@ -49,6 +50,7 @@ struct LargeInteger
     void setValue(int32_t value);
     void setValue(uint64_t value);
     void setValue(int64_t value);
+    void setValue(size_t value);
     void setValueByParsingFrom(const std::string &string, uint8_t radix = 10);
 
     template<size_t N>

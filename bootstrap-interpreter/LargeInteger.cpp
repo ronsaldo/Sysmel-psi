@@ -281,6 +281,11 @@ LargeInteger::LargeInteger(int64_t value)
     setValue(value);
 }
 
+LargeInteger::LargeInteger(size_t value)
+{
+    setValue(value);
+}
+
 LargeInteger::LargeInteger(bool isNegative, const std::vector<uint32_t> &newWords)
 {
     signBit = isNegative;
@@ -336,6 +341,14 @@ void LargeInteger::setValue(int64_t value)
         static_cast<uint32_t> (absValue >> 32),
     };
     setUnnormalizedWords(newWords);
+}
+
+void LargeInteger::setValue(size_t value)
+{
+    if(sizeof(size_t) == 8)
+        setValue(uint64_t(value));
+    else
+        setValue(uint32_t(value));
 }
 
 void LargeInteger::setValueByParsingFrom(const std::string &string, uint8_t radix)
