@@ -33,6 +33,10 @@ typedef std::shared_ptr<class SimpleFunctionType> SimpleFunctionTypePtr;
 class Value : public std::enable_shared_from_this<Value>
 {
 public:
+    Value() = default;
+    Value(const Value &other) = default;
+    virtual ~Value() = default;
+
     virtual ValuePtr getType() const;
     virtual ValuePtr getClass() const;
     virtual ValuePtr getClassOrType() const;

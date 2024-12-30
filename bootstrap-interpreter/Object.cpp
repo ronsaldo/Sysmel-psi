@@ -114,4 +114,8 @@ BinaryFileStreamPtr Stdio::stdinStream;
 BinaryFileStreamPtr Stdio::stdoutStream;
 BinaryFileStreamPtr Stdio::stderrStream;
 
+void TestCase::run()
+{
+}
+
 } // End of namespace

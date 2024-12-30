@@ -33,6 +33,7 @@ AddClassWithSuperclass(BinaryStream, AbstractBinaryStream)
 AddClassWithSuperclass(BinaryFileStream, BinaryStream)
 
 AddClassWithSuperclass(Stdio, Object)
+AddClassWithSuperclass(TestCase, Object)
 
 AddClassWithSuperclass(SyntacticValue, Object)
 

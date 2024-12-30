@@ -63,6 +63,10 @@ template<typename BaseClass> std::pair<ClassPtr, MetaclassPtr> makeClassAndMetac
     clazz->clazz = meta;
     clazz->name = name;
     clazz->subclasses = std::make_shared<Array> ();
+    clazz->format = sizeof(BaseClass);
+    clazz->interpreterBasicNew = []() {
+        return std::make_shared<BaseClass> ();
+    };
 
     meta->thisClass = clazz;
 
@@ -148,7 +152,8 @@ void IntrinsicsEnvironment::buildMetaHierarchy()
 #define AddClass(cls) \
     intrinsicMetaclasses[#cls]->clazz = MetaclassObj;
 #define AddClassWithSuperclass(cls, super) \
-    intrinsicMetaclasses[#cls]->clazz = MetaclassObj;
+    intrinsicMetaclasses[#cls]->clazz = MetaclassObj; \
+    intrinsicClasses[#cls]->registerInSuperclass();
 
 #include "IntrinsicClasses.inc"
 
@@ -163,6 +168,12 @@ void IntrinsicsEnvironment::buildMetaHierarchy()
 void IntrinsicsEnvironment::buildObjectPrimitives()
 {
     // ProtoObject
+    addPrimitiveToClass("ProtoObject", "initialize",
+        SimpleFunctionType::make(lookupValidClass("ProtoObject"), "self", lookupValidClass("ProtoObject")),
+        [](const std::vector<ValuePtr> &arguments){
+            sysmelAssert(arguments.size() == 1);
+            return arguments[0];
+        });
     addPrimitiveToClass("ProtoObject", "class",
         SimpleFunctionType::make(lookupValidClass("ProtoObject"), "self", lookupValidClass("ProtoObject")),
         [](const std::vector<ValuePtr> &arguments){
@@ -196,7 +207,28 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
             behavior->methodDict.insert(std::make_pair(selector->asAnalyzedSymbolValue(), method));
             return behavior;
         });
+    addPrimitiveToClass("Behavior", "basicNew",
+        SimpleFunctionType::make(
+            lookupValidClass("Behavior"), "self",
+            lookupValidClass("ProtoObject")),
 
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Behavior> (arguments[0]);
+            return self->basicNew();
+        });
+    addPrimitiveToClass("Behavior", "new",
+        SimpleFunctionType::make(
+            lookupValidClass("Behavior"), "self",
+            lookupValidClass("ProtoObject")),
+
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto self = std::static_pointer_cast<Behavior> (arguments[0]);
+            auto basicNew = self->basicNew();
+            std::vector<ValuePtr> initializeArgs;
+            return basicNew->performWithArguments(Symbol::internString("initialize"), initializeArgs);
+        });
     addPrimitiveToClass("Behavior", "superclass",
         SimpleFunctionType::make(
             lookupValidClass("Behavior"), "self",
@@ -207,6 +239,19 @@ void IntrinsicsEnvironment::buildObjectPrimitives()
             auto behavior = std::static_pointer_cast<Behavior> (arguments[0]);
             return behavior->superclass;
         });
+
+    // Class
+    addPrimitiveToClass("Class", "subclasses",
+        SimpleFunctionType::make(
+            lookupValidClass("Class"), "self",
+            lookupValidClass("Array")),
+
+        [](const std::vector<ValuePtr> &arguments) {
+            sysmelAssert(arguments.size() == 1);
+            auto clazz = std::static_pointer_cast<Class> (arguments[0]);
+            return clazz->subclasses;
+        });
+
     // Object
     addPrimitiveToClass("Object", "printString", 
         SimpleFunctionType::make(
