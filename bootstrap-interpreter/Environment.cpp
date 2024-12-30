@@ -728,6 +728,19 @@ void IntrinsicsEnvironment::buildValuePrimitives()
 
 void IntrinsicsEnvironment::buildBasicMacros()
 {
+    addPrimitiveGlobalMacro("if:then:",
+        SimpleFunctionType::make(
+            lookupValidClass("MacroContext"), "context",
+            lookupValidClass("SyntacticValue"), "condition",
+            lookupValidClass("SyntacticValue"), "trueCase",
+            lookupValidClass("SyntacticValue")),
+        [](const MacroContextPtr &context, const std::vector<ValuePtr> &arguments){
+            auto syntaxIf = std::make_shared<SyntaxIf> ();
+            syntaxIf->sourcePosition = context->sourcePosition;
+            syntaxIf->condition = arguments[0];
+            syntaxIf->trueCase = arguments[1];
+            return syntaxIf;
+        });
     addPrimitiveGlobalMacro("if:then:else:",
         SimpleFunctionType::make(
             lookupValidClass("MacroContext"), "context",
@@ -742,6 +755,35 @@ void IntrinsicsEnvironment::buildBasicMacros()
             syntaxIf->trueCase = arguments[1];
             syntaxIf->falseCase = arguments[2];
             return syntaxIf;
+        });
+    
+    addPrimitiveGlobalMacro("while:do:",
+        SimpleFunctionType::make(
+            lookupValidClass("MacroContext"), "context",
+            lookupValidClass("SyntacticValue"), "condition",
+            lookupValidClass("SyntacticValue"), "body",
+            lookupValidClass("SyntacticValue")),
+        [](const MacroContextPtr &context, const std::vector<ValuePtr> &arguments){
+            auto syntaxWhile = std::make_shared<SyntaxWhile> ();
+            syntaxWhile->sourcePosition = context->sourcePosition;
+            syntaxWhile->condition = arguments[0];
+            syntaxWhile->body = arguments[1];
+            return syntaxWhile;
+        });
+    addPrimitiveGlobalMacro("while:do:continueWith:",
+        SimpleFunctionType::make(
+            lookupValidClass("MacroContext"), "context",
+            lookupValidClass("SyntacticValue"), "condition",
+            lookupValidClass("SyntacticValue"), "body",
+            lookupValidClass("SyntacticValue"), "continueAction",
+            lookupValidClass("SyntacticValue")),
+        [](const MacroContextPtr &context, const std::vector<ValuePtr> &arguments){
+            auto syntaxWhile = std::make_shared<SyntaxWhile> ();
+            syntaxWhile->sourcePosition = context->sourcePosition;
+            syntaxWhile->condition = arguments[0];
+            syntaxWhile->body = arguments[1];
+            syntaxWhile->continueAction = arguments[2];
+            return syntaxWhile;
         });
 }
 

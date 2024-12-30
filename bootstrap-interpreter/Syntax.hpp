@@ -707,7 +707,74 @@ namespace Sysmel
             return lambdaNode->analyzeInEnvironment(environment);
         }
     };
+    
+        class SyntaxAssignment : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxAssignment(";
+            store->printStringOn(out);
+            out << " := ";
+            value->printStringOn(out);
+            out << ")";
+        }
 
+        virtual void traverseChildren(const std::function<void(ValuePtr)> &function) const override
+        {
+            if (store)
+            {
+                function(store);
+                store->traverseChildren(function);
+            }
+            if (value)
+            {
+                function(value);
+                value->traverseChildren(function);
+            }
+        }
+
+        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override;
+
+        ValuePtr store;
+        ValuePtr value;
+    };
+
+    class SyntaxAlloca : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxAlloca([";
+            valueType->printStringOn(out);
+            out << "]";
+            type->printStringOn(out);
+            out << ")";
+            if(initialValueExpression)
+            {
+                out << " := ";
+                initialValueExpression->printStringOn(out);
+            }
+        }
+
+        ValuePtr initialValueExpression;
+        ValuePtr valueType;
+        ValuePtr type;
+
+        ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            ValuePtr analyzedInitialValueExpression;
+            if(analyzedInitialValueExpression)
+                analyzedInitialValueExpression = initialValueExpression->analyzeInEnvironment(environment);
+
+            auto semanticAlloca = std::make_shared<SemanticAlloca> ();
+            semanticAlloca->initialValueExpression = analyzedInitialValueExpression;
+            semanticAlloca->valueType = valueType;
+            semanticAlloca->type = type;
+            return semanticAlloca;
+        }
+    };
+    
     class SyntaxBindingDefinition : public SyntacticValue
     {
     public:
@@ -760,40 +827,25 @@ namespace Sysmel
                 return analyzedInitialValueExpression;
             }
 
-            abort();
+            sysmelAssert(isMutable);
+
+            if(!analyzedExpectedType && analyzedInitialValueExpression)
+                analyzedExpectedType = analyzedInitialValueExpression->getTypeOrClass();
+
+            auto alloca = std::make_shared<SyntaxAlloca> ();
+            alloca->valueType = analyzedExpectedType;
+            alloca->type = ReferenceType::make(analyzedExpectedType);
+            alloca->initialValueExpression = analyzedInitialValueExpression;
+            auto analyzedAlloca = alloca->analyzeInEnvironment(environment);
+
+            auto allocaBinding = std::make_shared<SymbolValueBinding> ();
+            allocaBinding->sourcePosition = sourcePosition;
+            allocaBinding->name = localName;
+            allocaBinding->analyzedValue = analyzedAlloca;
+            allocaBinding->isAlloca = true;
+            environment->addLocalSymbolBinding(localName, allocaBinding);
+            return analyzedAlloca;
         }
-    };
-
-    class SyntaxAssignment : public SyntacticValue
-    {
-    public:
-        virtual void printStringOn(std::ostream &out) const override
-        {
-            out << "SyntaxAssignment(";
-            store->printStringOn(out);
-            out << " := ";
-            value->printStringOn(out);
-            out << ")";
-        }
-
-        virtual void traverseChildren(const std::function<void(ValuePtr)> &function) const override
-        {
-            if (store)
-            {
-                function(store);
-                store->traverseChildren(function);
-            }
-            if (value)
-            {
-                function(value);
-                value->traverseChildren(function);
-            }
-        }
-
-        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override;
-
-        ValuePtr store;
-        ValuePtr value;
     };
 
     class SyntaxBindPattern : public SyntacticValue
@@ -1504,6 +1556,51 @@ namespace Sysmel
             semanticIf->trueCase = analyzedTrueCase;
             semanticIf->falseCase = analyzedFalseCase;
             return semanticIf;
+        }
+    };
+
+    class SyntaxWhile : public SyntacticValue
+    {
+    public:        
+        ValuePtr condition;
+        ValuePtr body;
+        ValuePtr continueAction;
+
+        virtual void traverseChildren(const std::function<void(ValuePtr)> &function) const override
+        {
+            if (condition)
+            {
+                function(condition);
+                condition->traverseChildren(function);
+            }
+            if (body)
+            {
+                function(body);
+                body->traverseChildren(function);
+            }
+            if (continueAction)
+            {
+                function(continueAction);
+                continueAction->traverseChildren(function);
+            }
+        }
+
+        virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            auto booleanType = IntrinsicsEnvironment::uniqueInstance()->lookupValidClass("Boolean");
+            auto analyzedCondition = condition->analyzeInEnvironment(environment);
+            analyzedCondition = analyzedCondition->coerceIntoExpectedTypeAt(booleanType, sourcePosition);
+
+            auto bodyEnvironment = std::make_shared<LexicalEnvironment> (environment, sourcePosition);
+            auto analyzedBody = body->analyzeInEnvironment(bodyEnvironment);
+            ValuePtr analyzedContinueAction;
+            if(continueAction)
+            {
+                auto continueActionEnvironment = std::make_shared<LexicalEnvironment> (environment, sourcePosition);
+                analyzedContinueAction = continueAction->analyzeInEnvironment(continueActionEnvironment);
+            }
+
+            abort();
         }
     };
 

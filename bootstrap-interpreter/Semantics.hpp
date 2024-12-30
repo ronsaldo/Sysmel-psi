@@ -572,6 +572,90 @@ public:
     ValuePtr identifierBinding;
 };
 
+class MutableValueBox : public Value
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "MutableValueBox(";
+        if(value)
+        {
+            value->printStringOn(out);
+            out << ", ";
+        }
+        valueType->printStringOn(out);
+        out << ", ";
+        type->printStringOn(out);
+        out << ")";
+    }
+
+    void mutableAssignValue(const ValuePtr &valueToAssign)
+    {
+        value = valueToAssign;
+    }
+    
+    ValuePtr value;
+    ValuePtr valueType;
+    ValuePtr type;
+};
+
+class SemanticAlloca : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticAlloca([";
+        valueType->printStringOn(out);
+        out << "]";
+        type->printStringOn(out);
+        out << ")";
+        if(initialValueExpression)
+        {
+            out << " := ";
+            initialValueExpression->printStringOn(out);
+        }
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto box = std::make_shared<MutableValueBox> ();
+        box->valueType = valueType->evaluateInEnvironment(environment);
+        box->type = type->evaluateInEnvironment(environment);
+        if(initialValueExpression)
+            box->value = initialValueExpression->evaluateInEnvironment(environment);
+        return box;
+    }
+
+    ValuePtr initialValueExpression;
+    ValuePtr valueType;
+    //ValuePtr type;
+};
+
+class SemanticReferenceAssignment : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticReferenceAssignment([";
+        reference->printStringOn(out);
+        out << " := ";
+        value->printStringOn(out);
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto evalValue = value->evaluateInEnvironment(environment);
+        auto evalReference = reference->evaluateInEnvironment(environment);
+        evalReference->mutableAssignValue(evalValue);
+        return evalValue;
+    }
+
+    ValuePtr reference;
+    ValuePtr value;
+    //ValuePtr type;
+};
+
 class SemanticIf : public SemanticValue
 {
 public:
@@ -603,6 +687,28 @@ public:
     ValuePtr condition;
     ValuePtr trueCase;
     ValuePtr falseCase;
+};
+
+class SemanticWhile : public SemanticValue
+{
+public:
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto conditionValue = condition->evaluateInEnvironment(environment);
+        while(conditionValue->isTrue())
+        {
+            if(body)
+                body->evaluateInEnvironment(environment);
+            if(continueAction)
+                continueAction->evaluateInEnvironment(environment);
+        }
+
+        return VoidValue::uniqueInstance();
+    }
+
+    ValuePtr condition;
+    ValuePtr body;
+    ValuePtr continueAction;
 };
 
 } // End of namespace Sysmel

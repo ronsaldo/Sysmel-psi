@@ -191,6 +191,32 @@ ValuePtr SimpleFunctionArgumentTypeAnalysisContext::getResultType()
     return simpleFunctionalType->resultType;
 }
 
+PointerTypePtr PointerType::make(ValuePtr baseType)
+{
+    auto it = PointerTypeCache.find(baseType);
+    if(it != PointerTypeCache.end())
+        return it->second;
+    
+    auto pointerType = std::make_shared<PointerType> ();
+    pointerType->baseType = baseType;
+    return pointerType;
+}
+
+std::map<ValuePtr, PointerTypePtr> PointerType::PointerTypeCache;
+
+ReferenceTypePtr ReferenceType::make(ValuePtr baseType)
+{
+    auto it = ReferenceTypeCache.find(baseType);
+    if(it != ReferenceTypeCache.end())
+        return it->second;
+    
+    auto refType = std::make_shared<ReferenceType> ();
+    refType->baseType = baseType;
+    return refType;
+}
+
+std::map<ValuePtr, ReferenceTypePtr> ReferenceType::ReferenceTypeCache;
+
 PrimitiveUInt8TypePtr PrimitiveUInt8Type::uniqueInstance()
 {
     if(!singleton)

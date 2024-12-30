@@ -69,6 +69,15 @@ public:
     virtual bool isFunctionalDependentTypeNode() const { return false; }
     virtual bool isGradualType() const { return false; }
     virtual bool isMacro() const { return false; }
+    virtual bool isPointerLikeType() const {return false;}
+    virtual bool isReferenceLikeType() const {return false;}
+    virtual ValuePtr getDecayedType() {return shared_from_this();}
+
+    virtual void mutableAssignValue(const ValuePtr &valueToAssign)
+    {
+        throwExceptionWithMessage(("Not a valid mutable store to assign " + valueToAssign->printString()).c_str());
+    }
+
     virtual SymbolPtr asAnalyzedSymbolValue() { return nullptr; } 
     virtual ValuePtr asTypeValue() { return nullptr; }
 

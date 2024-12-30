@@ -177,8 +177,23 @@ ValuePtr SyntaxAssignment::analyzeInEnvironment(const EnvironmentPtr &environmen
     }
     else
     {
-        auto analyzedStore = store->analyzeInEnvironment(environment);
-        abort();
+        auto analyzedStore = expandedStore->analyzeInEnvironment(environment);
+        auto storeType = analyzedStore->getType();
+        if(!storeType->isReferenceLikeType())
+            throwExceptionWithMessage("Assignment requires a reference, or something like that.");
+        auto baseType = storeType->getDecayedType();
+        
+        auto analyzedValue = value->analyzeInEnvironment(environment);
+        analyzedValue = analyzedValue->coerceIntoExpectedTypeAt(baseType, sourcePosition);
+
+        auto semanticAssignment = std::make_shared<SemanticReferenceAssignment> ();
+        semanticAssignment->sourcePosition = sourcePosition;
+        semanticAssignment->reference = analyzedStore;
+        semanticAssignment->value = analyzedValue;
+        semanticAssignment->type = baseType;
+        //printf("analyzedStore %s | %s\n", analyzedStore->printString().c_str(), baseType->printString().c_str());
+        //printf("analyzedValue %s\n", analyzedValue->printString().c_str());
+        return semanticAssignment;
     }
 }
 

@@ -26,6 +26,7 @@ namespace Sysmel
     public:
         SymbolPtr name;
         ValuePtr analyzedValue;
+        bool isAlloca = false;
 
         virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
     };
