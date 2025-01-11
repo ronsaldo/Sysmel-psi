@@ -9,16 +9,20 @@ namespace Sysmel
 {
 
 typedef std::shared_ptr<class TypeUniverse> TypeUniversePtr;
-typedef std::shared_ptr<class GradualType> GradualTypePtr;
-typedef std::shared_ptr<class UnitType> UnitTypePtr;
-typedef std::shared_ptr<class BottomType> BottomTypePtr;
-typedef std::shared_ptr<class VoidValue> VoidValuePtr;
-typedef std::shared_ptr<class VoidType> VoidTypePtr;
-typedef std::shared_ptr<class ProductType> ProductTypePtr;
-typedef std::shared_ptr<class SumType> SumTypePtr;
+typedef std::shared_ptr<class GradualType>  GradualTypePtr;
+typedef std::shared_ptr<class UnitType>     UnitTypePtr;
+typedef std::shared_ptr<class BottomType>   BottomTypePtr;
+typedef std::shared_ptr<class VoidValue>    VoidValuePtr;
+typedef std::shared_ptr<class VoidType>     VoidTypePtr;
+typedef std::shared_ptr<class ProductType>  ProductTypePtr;
+typedef std::shared_ptr<class SumType>      SumTypePtr;
 typedef std::shared_ptr<class FunctionType> FunctionTypePtr;
-typedef std::shared_ptr<class ObjectType> ObjectTypePtr;
-typedef std::shared_ptr<class Symbol> SymbolPtr;
+typedef std::shared_ptr<class ObjectType>   ObjectTypePtr;
+typedef std::shared_ptr<class Symbol>       SymbolPtr;
+
+typedef std::shared_ptr<class PointerLikeType> PointerLikeTypePtr;
+typedef std::shared_ptr<class PointerType>     PointerTypePtr;
+typedef std::shared_ptr<class ReferenceType>   ReferenceTypePtr;
 
 typedef std::shared_ptr<class PrimitiveUInt8Type>  PrimitiveUInt8TypePtr;
 typedef std::shared_ptr<class PrimitiveUInt16Type> PrimitiveUInt16TypePtr;
@@ -377,6 +381,63 @@ typedef std::shared_ptr<class SimpleFunctionType> SimpleFunctionTypePtr;
 class PrimitiveType : public TypeBehavior
 {
 public:
+};
+
+class PointerLikeType : public PrimitiveType
+{
+public:
+    virtual bool isPointerLikeType() const override
+    {
+        return true;
+    }
+
+    ValuePtr baseType;
+};
+
+class PointerType : public PointerLikeType
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        baseType->printStringOn(out);
+        out << " pointer";
+    }
+
+    static PointerTypePtr make(ValuePtr baseType);
+
+private:
+    static std::map<ValuePtr, PointerTypePtr> PointerTypeCache;
+};
+
+class ReferenceLikeType : public PointerLikeType
+{
+public:
+    virtual ValuePtr getDecayedType() override
+    {
+        return baseType;
+    }
+
+    virtual bool isReferenceLikeType() const override
+    {
+        return true;
+    }
+
+    virtual ValuePtr analyzeSyntaxMessageSendOfInstance(const SyntaxMessageSendPtr &messageSend, const EnvironmentPtr &environment, const ValuePtr &analyzedReceiver, const ValuePtr &analyzedSelector);
+};
+
+class ReferenceType : public ReferenceLikeType
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        baseType->printStringOn(out);
+        out << " ref";
+    }
+
+    static ReferenceTypePtr make(ValuePtr baseType);
+
+private:
+    static std::map<ValuePtr, ReferenceTypePtr> ReferenceTypeCache;
 };
 
 class PrimitiveNumberType : public PrimitiveType

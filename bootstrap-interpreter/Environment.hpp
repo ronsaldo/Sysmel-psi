@@ -26,6 +26,7 @@ namespace Sysmel
     public:
         SymbolPtr name;
         ValuePtr analyzedValue;
+        bool isAlloca = false;
 
         virtual ValuePtr analyzeIdentifierReferenceInEnvironment(const ValuePtr &syntaxNode, const EnvironmentPtr &environment);
     };
@@ -275,6 +276,34 @@ namespace Sysmel
         }
 
         SourcePositionPtr sourcePosition;
+    };
+
+    class TypeDefinitionEnvironment : public NonEmptyEnvironment
+    {
+    public:
+        TypeDefinitionEnvironment(const EnvironmentPtr &cparent, const SourcePositionPtr &csourcePosition)
+        {
+            parent = cparent;
+            sourcePosition = csourcePosition;
+        }
+    };
+
+    class ClassDefinitionEnvironment : public TypeDefinitionEnvironment
+    {
+    public:
+        ClassDefinitionEnvironment(const EnvironmentPtr &cparent, const SourcePositionPtr &csourcePosition)
+            : TypeDefinitionEnvironment(cparent, csourcePosition)
+        {
+        }
+    };
+
+    class StructDefinitionEnvironment : public TypeDefinitionEnvironment
+    {
+    public:
+        StructDefinitionEnvironment(const EnvironmentPtr &cparent, const SourcePositionPtr &csourcePosition)
+            : TypeDefinitionEnvironment(cparent, csourcePosition)
+        {
+        }
     };
 
     class FunctionalAnalysisEnvironment : public NonEmptyEnvironment

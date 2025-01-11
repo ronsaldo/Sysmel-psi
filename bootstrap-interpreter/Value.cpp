@@ -1,5 +1,6 @@
 #include "Value.hpp"
 #include "Type.hpp"
+#include "Syntax.hpp"
 #include "Semantics.hpp"
 #include <exception>
 #include <sstream>
@@ -161,6 +162,18 @@ ValuePtr Value::coerceIntoExpectedTypeAt(const ValuePtr &targetType, const Sourc
 
     return shared_from_this();
 }
+
+bool Value::isSymbolWithValue(const char *expectedValue)
+{
+    (void)expectedValue;
+    return false;
+}
+
+ValuePtr Value::analyzeSyntaxMessageSendOfInstance(const SyntaxMessageSendPtr &messageSend, const EnvironmentPtr &environment, const ValuePtr &analyzedReceiver, const ValuePtr &analyzedSelector)
+{
+    return messageSend->analyzeOrdinarySendWithReceiverTypeAndSelector(shared_from_this(), environment, analyzedReceiver, analyzedSelector);
+}
+
 
 ValuePtr Value::getClass() const
 {

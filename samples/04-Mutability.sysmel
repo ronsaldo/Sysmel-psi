@@ -1,0 +1,6 @@
+:!myVar := 42.
+
+Stdio stdout nextPutAll: myVar printString; nextPutAll: "\n".
+
+myVar := 5.
+Stdio stdout nextPutAll: myVar printString; nextPutAll: "\n".

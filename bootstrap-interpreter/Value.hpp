@@ -23,6 +23,7 @@ typedef std::shared_ptr<class Environment> EnvironmentPtr;
 typedef std::shared_ptr<class SyntacticValue> SyntacticValuePtr;
 typedef std::shared_ptr<class SourcePosition> SourcePositionPtr; 
 typedef std::shared_ptr<class SyntaxError> SyntaxErrorPtr; 
+typedef std::shared_ptr<class SyntaxMessageSend> SyntaxMessageSendPtr;
 typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
 typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
 typedef std::shared_ptr<class SymbolFixpointBinding> SymbolFixpointBindingPtr;
@@ -33,6 +34,10 @@ typedef std::shared_ptr<class SimpleFunctionType> SimpleFunctionTypePtr;
 class Value : public std::enable_shared_from_this<Value>
 {
 public:
+    Value() = default;
+    Value(const Value &other) = default;
+    virtual ~Value() = default;
+
     virtual ValuePtr getType() const;
     virtual ValuePtr getClass() const;
     virtual ValuePtr getClassOrType() const;
@@ -65,6 +70,20 @@ public:
     virtual bool isFunctionalDependentTypeNode() const { return false; }
     virtual bool isGradualType() const { return false; }
     virtual bool isMacro() const { return false; }
+    virtual bool isPointerLikeType() const {return false;}
+    virtual bool isReferenceLikeType() const {return false;}
+    virtual ValuePtr getDecayedType() {return shared_from_this();}
+
+    virtual ValuePtr mutableLoadValue()
+    {
+        throwExceptionWithMessage("Not a valid mutable store to load a value.");
+    }
+
+    virtual void mutableStoreValue(const ValuePtr &valueToAssign)
+    {
+        throwExceptionWithMessage(("Not a valid mutable store to assign " + valueToAssign->printString()).c_str());
+    }
+
     virtual SymbolPtr asAnalyzedSymbolValue() { return nullptr; } 
     virtual ValuePtr asTypeValue() { return nullptr; }
 
@@ -81,6 +100,9 @@ public:
     virtual ValuePtr coerceIntoExpectedTypeAt(const ValuePtr &targetType, const SourcePositionPtr &coercionLocation);
     virtual bool isSubclassOf(const ValuePtr &targetSuperclass);
     virtual bool isSubtypeOf(const ValuePtr &targetSupertype);
+
+    virtual bool isSymbolWithValue(const char *expectedValue);
+    virtual ValuePtr analyzeSyntaxMessageSendOfInstance(const SyntaxMessageSendPtr &messageSend, const EnvironmentPtr &environment, const ValuePtr &analyzedReceiver, const ValuePtr &analyzedSelector);
     
     virtual uint8_t evaluateAsSingleByte() 
     {

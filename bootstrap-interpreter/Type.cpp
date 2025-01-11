@@ -1,5 +1,6 @@
 #include "Type.hpp"
 #include "Environment.hpp"
+#include "Syntax.hpp"
 
 namespace Sysmel
 {
@@ -190,6 +191,62 @@ ValuePtr SimpleFunctionArgumentTypeAnalysisContext::getResultType()
 {
     return simpleFunctionalType->resultType;
 }
+
+PointerTypePtr PointerType::make(ValuePtr baseType)
+{
+    auto it = PointerTypeCache.find(baseType);
+    if(it != PointerTypeCache.end())
+        return it->second;
+    
+    auto pointerType = std::make_shared<PointerType> ();
+    pointerType->baseType = baseType;
+    return pointerType;
+}
+
+std::map<ValuePtr, PointerTypePtr> PointerType::PointerTypeCache;
+
+ValuePtr ReferenceLikeType::analyzeSyntaxMessageSendOfInstance(const SyntaxMessageSendPtr &messageSend, const EnvironmentPtr &environment, const ValuePtr &analyzedReceiver, const ValuePtr &analyzedSelector)
+{
+    auto analyzedSelectorSymbol = analyzedSelector->asAnalyzedSymbolValue();
+    if(analyzedSelectorSymbol->isSymbolWithValue(":=") && messageSend->arguments.size() == 1)
+    {
+        auto storeValue = std::make_shared<SyntaxStoreValue> ();
+        storeValue->sourcePosition = messageSend->sourcePosition;
+        storeValue->pointer = analyzedReceiver;
+        storeValue->value = messageSend->arguments[0];
+        return storeValue->analyzeInEnvironment(environment);
+    }
+    else if(analyzedSelectorSymbol->isSymbolWithValue("address"))
+    {
+        abort();        
+    }
+
+    auto loadedReceiver = std::make_shared<SyntaxLoadValue> ();
+    loadedReceiver->sourcePosition = messageSend->sourcePosition;
+    loadedReceiver->pointer = analyzedReceiver;
+    loadedReceiver->type = baseType;
+
+    auto newMessageSend = std::make_shared<SyntaxMessageSend> ();
+    newMessageSend->sourcePosition = messageSend->sourcePosition;
+    newMessageSend->receiver = loadedReceiver;
+    newMessageSend->selector = analyzedSelector;
+    newMessageSend->arguments = messageSend->arguments;
+
+    return newMessageSend->analyzeInEnvironment(environment);
+}
+
+ReferenceTypePtr ReferenceType::make(ValuePtr baseType)
+{
+    auto it = ReferenceTypeCache.find(baseType);
+    if(it != ReferenceTypeCache.end())
+        return it->second;
+    
+    auto refType = std::make_shared<ReferenceType> ();
+    refType->baseType = baseType;
+    return refType;
+}
+
+std::map<ValuePtr, ReferenceTypePtr> ReferenceType::ReferenceTypeCache;
 
 PrimitiveUInt8TypePtr PrimitiveUInt8Type::uniqueInstance()
 {

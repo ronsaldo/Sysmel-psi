@@ -6,6 +6,7 @@
 #include "Object.hpp"
 #include "Environment.hpp"
 #include "Assert.hpp"
+#include "Type.hpp"
 
 namespace Sysmel
 {
@@ -572,6 +573,114 @@ public:
     ValuePtr identifierBinding;
 };
 
+class MutableValueBox : public Value
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "MutableValueBox(";
+        if(value)
+        {
+            value->printStringOn(out);
+            out << ", ";
+        }
+        valueType->printStringOn(out);
+        out << ", ";
+        type->printStringOn(out);
+        out << ")";
+    }
+
+    virtual void mutableStoreValue(const ValuePtr &valueToAssign) override
+    {
+        value = valueToAssign;
+    }
+    
+    virtual ValuePtr mutableLoadValue() override
+    {
+        return value;
+    }
+
+    ValuePtr value;
+    ValuePtr valueType;
+    ValuePtr type;
+};
+
+class SemanticAlloca : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticAlloca([";
+        valueType->printStringOn(out);
+        out << "]";
+        type->printStringOn(out);
+        out << ")";
+        if(initialValueExpression)
+        {
+            out << " := ";
+            initialValueExpression->printStringOn(out);
+        }
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto box = std::make_shared<MutableValueBox> ();
+        box->valueType = valueType->evaluateInEnvironment(environment);
+        box->type = type->evaluateInEnvironment(environment);
+        if(initialValueExpression)
+            box->value = initialValueExpression->evaluateInEnvironment(environment);
+        return box;
+    }
+
+    ValuePtr initialValueExpression;
+    ValuePtr valueType;
+    //ValuePtr type;
+};
+
+class SemanticLoadValue : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticLoadValue([";
+        pointer->printStringOn(out);
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto evalPointer = pointer->evaluateInEnvironment(environment);
+        auto evalValue = evalPointer->mutableLoadValue();
+        return evalValue;
+    }
+
+    ValuePtr pointer;
+};
+
+class SemanticStoreValue : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticStoreValue([";
+        pointer->printStringOn(out);
+        out << " := ";
+        value->printStringOn(out);
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto evalValue = value->evaluateInEnvironment(environment);
+        auto evalReference = pointer->evaluateInEnvironment(environment);
+        evalReference->mutableStoreValue(evalValue);
+        return evalValue;
+    }
+
+    ValuePtr pointer;
+    ValuePtr value;
+};
+
 class SemanticIf : public SemanticValue
 {
 public:
@@ -603,6 +712,28 @@ public:
     ValuePtr condition;
     ValuePtr trueCase;
     ValuePtr falseCase;
+};
+
+class SemanticWhile : public SemanticValue
+{
+public:
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto conditionValue = condition->evaluateInEnvironment(environment);
+        while(conditionValue->isTrue())
+        {
+            if(body)
+                body->evaluateInEnvironment(environment);
+            if(continueAction)
+                continueAction->evaluateInEnvironment(environment);
+        }
+
+        return VoidValue::uniqueInstance();
+    }
+
+    ValuePtr condition;
+    ValuePtr body;
+    ValuePtr continueAction;
 };
 
 } // End of namespace Sysmel
