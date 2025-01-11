@@ -6,6 +6,7 @@
 #include "Object.hpp"
 #include "Environment.hpp"
 #include "Assert.hpp"
+#include "Type.hpp"
 
 namespace Sysmel
 {
@@ -589,11 +590,16 @@ public:
         out << ")";
     }
 
-    void mutableAssignValue(const ValuePtr &valueToAssign)
+    virtual void mutableStoreValue(const ValuePtr &valueToAssign) override
     {
         value = valueToAssign;
     }
     
+    virtual ValuePtr mutableLoadValue() override
+    {
+        return value;
+    }
+
     ValuePtr value;
     ValuePtr valueType;
     ValuePtr type;
@@ -631,13 +637,33 @@ public:
     //ValuePtr type;
 };
 
-class SemanticReferenceAssignment : public SemanticValue
+class SemanticLoadValue : public SemanticValue
 {
 public:
     virtual void printStringOn(std::ostream &out) const override
     {
-        out << "SemanticReferenceAssignment([";
-        reference->printStringOn(out);
+        out << "SemanticLoadValue([";
+        pointer->printStringOn(out);
+        out << ")";
+    }
+
+    virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
+    {
+        auto evalPointer = pointer->evaluateInEnvironment(environment);
+        auto evalValue = evalPointer->mutableLoadValue();
+        return evalValue;
+    }
+
+    ValuePtr pointer;
+};
+
+class SemanticStoreValue : public SemanticValue
+{
+public:
+    virtual void printStringOn(std::ostream &out) const override
+    {
+        out << "SemanticStoreValue([";
+        pointer->printStringOn(out);
         out << " := ";
         value->printStringOn(out);
         out << ")";
@@ -646,14 +672,13 @@ public:
     virtual ValuePtr evaluateInEnvironment(const EnvironmentPtr &environment) override
     {
         auto evalValue = value->evaluateInEnvironment(environment);
-        auto evalReference = reference->evaluateInEnvironment(environment);
-        evalReference->mutableAssignValue(evalValue);
+        auto evalReference = pointer->evaluateInEnvironment(environment);
+        evalReference->mutableStoreValue(evalValue);
         return evalValue;
     }
 
-    ValuePtr reference;
+    ValuePtr pointer;
     ValuePtr value;
-    //ValuePtr type;
 };
 
 class SemanticIf : public SemanticValue

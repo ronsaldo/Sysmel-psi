@@ -708,7 +708,7 @@ namespace Sysmel
         }
     };
     
-        class SyntaxAssignment : public SyntacticValue
+    class SyntaxAssignment : public SyntacticValue
     {
     public:
         virtual void printStringOn(std::ostream &out) const override
@@ -764,8 +764,10 @@ namespace Sysmel
         ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
         {
             ValuePtr analyzedInitialValueExpression;
-            if(analyzedInitialValueExpression)
+            if(initialValueExpression)
+            {
                 analyzedInitialValueExpression = initialValueExpression->analyzeInEnvironment(environment);
+            }
 
             auto semanticAlloca = std::make_shared<SemanticAlloca> ();
             semanticAlloca->initialValueExpression = analyzedInitialValueExpression;
@@ -774,7 +776,58 @@ namespace Sysmel
             return semanticAlloca;
         }
     };
-    
+
+    class SyntaxLoadValue : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxLoadValue([";
+            type->printStringOn(out);
+            out << "]";
+            pointer->printStringOn(out);
+            out << ")";
+        }
+
+        ValuePtr pointer;
+        ValuePtr type;
+
+        ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            auto analyzedPointer = pointer->analyzeInEnvironment(environment);
+            auto semanticLoadValue = std::make_shared<SemanticLoadValue> ();
+            semanticLoadValue->pointer = analyzedPointer;
+            semanticLoadValue->type = type;
+            return semanticLoadValue;
+        }
+    };
+
+    class SyntaxStoreValue : public SyntacticValue
+    {
+    public:
+        virtual void printStringOn(std::ostream &out) const override
+        {
+            out << "SyntaxLoadValue([";
+            pointer->printStringOn(out);
+            out << "]";
+            value->printStringOn(out);
+            out << ")";
+        }
+
+        ValuePtr pointer;
+        ValuePtr value;
+
+        ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override
+        {
+            auto analyzedPointer = pointer->analyzeInEnvironment(environment);
+            auto analyzedValue = value->analyzeInEnvironment(environment);
+            auto semanticStore = std::make_shared<SemanticStoreValue> ();
+            semanticStore->pointer = analyzedPointer;
+            semanticStore->value = analyzedValue;
+            return semanticStore;
+        }
+    };
+
     class SyntaxBindingDefinition : public SyntacticValue
     {
     public:
@@ -1370,6 +1423,7 @@ namespace Sysmel
         }
 
         virtual ValuePtr analyzeInEnvironment(const EnvironmentPtr &environment) override;
+        ValuePtr analyzeOrdinarySendWithReceiverTypeAndSelector(const ValuePtr &receiverType, const EnvironmentPtr &environment, const ValuePtr &analyzedReceiver, const ValuePtr &analyzedSelector);
 
         ValuePtr receiver;
         ValuePtr selector;

@@ -577,6 +577,11 @@ public:
         throwExceptionWithMessage("Symbol mutation is forbidden.");
     }
 
+    virtual bool isSymbolWithValue(const char *expectedValue) override
+    {
+        return value == expectedValue;
+    }
+
 private:
     static std::map<std::string, SymbolPtr> internedSymbols;
 };

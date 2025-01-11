@@ -23,6 +23,7 @@ typedef std::shared_ptr<class Environment> EnvironmentPtr;
 typedef std::shared_ptr<class SyntacticValue> SyntacticValuePtr;
 typedef std::shared_ptr<class SourcePosition> SourcePositionPtr; 
 typedef std::shared_ptr<class SyntaxError> SyntaxErrorPtr; 
+typedef std::shared_ptr<class SyntaxMessageSend> SyntaxMessageSendPtr;
 typedef std::shared_ptr<class SyntaxMessageCascade> SyntaxMessageCascadePtr;
 typedef std::shared_ptr<class SymbolArgumentBinding> SymbolArgumentBindingPtr;
 typedef std::shared_ptr<class SymbolFixpointBinding> SymbolFixpointBindingPtr;
@@ -73,7 +74,12 @@ public:
     virtual bool isReferenceLikeType() const {return false;}
     virtual ValuePtr getDecayedType() {return shared_from_this();}
 
-    virtual void mutableAssignValue(const ValuePtr &valueToAssign)
+    virtual ValuePtr mutableLoadValue()
+    {
+        throwExceptionWithMessage("Not a valid mutable store to load a value.");
+    }
+
+    virtual void mutableStoreValue(const ValuePtr &valueToAssign)
     {
         throwExceptionWithMessage(("Not a valid mutable store to assign " + valueToAssign->printString()).c_str());
     }
@@ -94,6 +100,9 @@ public:
     virtual ValuePtr coerceIntoExpectedTypeAt(const ValuePtr &targetType, const SourcePositionPtr &coercionLocation);
     virtual bool isSubclassOf(const ValuePtr &targetSuperclass);
     virtual bool isSubtypeOf(const ValuePtr &targetSupertype);
+
+    virtual bool isSymbolWithValue(const char *expectedValue);
+    virtual ValuePtr analyzeSyntaxMessageSendOfInstance(const SyntaxMessageSendPtr &messageSend, const EnvironmentPtr &environment, const ValuePtr &analyzedReceiver, const ValuePtr &analyzedSelector);
     
     virtual uint8_t evaluateAsSingleByte() 
     {

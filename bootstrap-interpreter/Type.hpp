@@ -421,6 +421,8 @@ public:
     {
         return true;
     }
+
+    virtual ValuePtr analyzeSyntaxMessageSendOfInstance(const SyntaxMessageSendPtr &messageSend, const EnvironmentPtr &environment, const ValuePtr &analyzedReceiver, const ValuePtr &analyzedSelector);
 };
 
 class ReferenceType : public ReferenceLikeType

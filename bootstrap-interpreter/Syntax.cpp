@@ -42,8 +42,14 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
     
     auto analyzedReceiver = receiver->analyzeInEnvironment(environment);
     auto receiverTypeOrClass = analyzedReceiver->getTypeOrClass()->asTypeValue();
+    auto self = std::static_pointer_cast<SyntaxMessageSend> (shared_from_this());
+    return receiverTypeOrClass->analyzeSyntaxMessageSendOfInstance(self, environment, analyzedReceiver, analyzedSelector);
+}
 
-    auto method = receiverTypeOrClass->lookupSelector(analyzedSelectorSymbol);
+ValuePtr SyntaxMessageSend::analyzeOrdinarySendWithReceiverTypeAndSelector(const ValuePtr &receiverType, const EnvironmentPtr &environment, const ValuePtr &analyzedReceiver, const ValuePtr &analyzedSelector)
+{
+    auto analyzedSelectorSymbol = analyzedSelector->asAnalyzedSymbolValue();
+    auto method = receiverType->lookupSelector(analyzedSelectorSymbol);
     if(method)
     {
         auto methodType = method->getType()->asTypeValue(); 
@@ -52,7 +58,7 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
         std::vector<ValuePtr> analyzedArguments;
         analyzedArguments.reserve(arguments.size());
 
-        analyzedReceiver = argContext->coerceArgumentWithIndex(0, analyzedReceiver);
+        auto coercedReceiver = argContext->coerceArgumentWithIndex(0, analyzedReceiver);
         for(size_t i = 0; i < arguments.size(); ++i)
         {
             auto analyzedArgument = arguments[i]->analyzeInEnvironment(environment);
@@ -63,13 +69,13 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
 
         auto analyzedMessage = std::make_shared<SemanticMessageSend> ();
         analyzedMessage->sourcePosition = sourcePosition;
-        analyzedMessage->receiver = analyzedReceiver;
+        analyzedMessage->receiver = coercedReceiver;
         analyzedMessage->selector = analyzedSelectorSymbol;
         analyzedMessage->arguments.swap(analyzedArguments);
         analyzedMessage->type = argContext->getResultType();
         return analyzedMessage;
     }
-    else if(receiverTypeOrClass->isClass())
+    else if(receiverType->isClass())
     {
         abort();
     }
@@ -79,26 +85,6 @@ ValuePtr SyntaxMessageSend::analyzeInEnvironment(const EnvironmentPtr &environme
     }
 
     abort();
-/*    std::vector<ValuePtr> analyzedArguments;
-    analyzedArguments.reserve(1 + arguments.size());
-    analyzedArguments.push
-
-    for(size_t i = 1; i < analyzedArguments.size(); ++i)
-    {
-        analyzedArguments.push_back(argument->analyzeInEnvironment(environment));
-    }
-
-    auto analyzedMessage = std::make_shared<SemanticMessageSend> ();
-    analyzedMessage->sourcePosition = sourcePosition;
-    analyzedMessage->receiver = analyzedReceiver;
-    analyzedMessage->selector = analyzedSelectorSymbol;
-    analyzedMessage->arguments.swap(analyzedArguments);
-
-
-    analyzedMessage->type = GradualType::uniqueInstance();
-
-    return analyzedMessage;
-*/
 }
 
 ValuePtr SyntaxMessageCascade::analyzeInEnvironment(const EnvironmentPtr &environment)
@@ -177,23 +163,17 @@ ValuePtr SyntaxAssignment::analyzeInEnvironment(const EnvironmentPtr &environmen
     }
     else
     {
-        auto analyzedStore = expandedStore->analyzeInEnvironment(environment);
-        auto storeType = analyzedStore->getType();
-        if(!storeType->isReferenceLikeType())
-            throwExceptionWithMessage("Assignment requires a reference, or something like that.");
-        auto baseType = storeType->getDecayedType();
-        
-        auto analyzedValue = value->analyzeInEnvironment(environment);
-        analyzedValue = analyzedValue->coerceIntoExpectedTypeAt(baseType, sourcePosition);
+        // Treat it as another message.
+        auto selector = std::make_shared<SyntaxLiteralSymbol> ();
+        selector->sourcePosition = sourcePosition;
+        selector->value = ":=";
 
-        auto semanticAssignment = std::make_shared<SemanticReferenceAssignment> ();
-        semanticAssignment->sourcePosition = sourcePosition;
-        semanticAssignment->reference = analyzedStore;
-        semanticAssignment->value = analyzedValue;
-        semanticAssignment->type = baseType;
-        //printf("analyzedStore %s | %s\n", analyzedStore->printString().c_str(), baseType->printString().c_str());
-        //printf("analyzedValue %s\n", analyzedValue->printString().c_str());
-        return semanticAssignment;
+        auto messageSend = std::make_shared<SyntaxMessageSend> ();
+        messageSend->sourcePosition = sourcePosition;
+        messageSend->receiver = expandedStore;
+        messageSend->selector = selector;
+        messageSend->arguments.push_back(this->value);
+        return messageSend->analyzeInEnvironment(environment);
     }
 }
 
